@@ -149,6 +149,8 @@ void secuencia_choque(int *velocidad) {
 
 // Secuencia "La apilada"
 
+// Secuencia "La apilada" (de derecha a izquierda)
+
 void secuencia_apilada(int *velocidad) {
     int leds[8] = {0};
     int ch;
@@ -169,42 +171,31 @@ void secuencia_apilada(int *velocidad) {
             *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
         }
 
-        // Apagar todos los LEDs antes de actualizar
-        for (int i = 0; i < 8; i++) leds[i] = 0;
+        // Inicializar LEDs apagados
+        for (i = 0; i < 8; i++) leds[i] = 0;
 
-        // Mover las luces de izquierda a derecha y luego apilarlas
-        for (i = 0; i < 8; i++) {
-            leds[i] = 1;  // Encender la luz actual
-            interfaz(leds); // Mostrar la luz encendida
+        // Comenzar la secuencia de apilado (de derecha a izquierda)
+        for (i = 7; i >= 0; i--) {  // Iniciar desde el LED más a la derecha
+            // Encender las luces que ya están fijas (de derecha a izquierda)
+            for (j = 7; j >= i; j--) leds[j] = 1;
 
-            // Esperar un poco antes de continuar
-            gpioDelay(*velocidad);
-
-            leds[i] = 0;  // Apagar la luz después de moverla
-
-            // Encender una nueva luz en la siguiente posición
-            if (i < 7) {
-                leds[i + 1] = 1;
-                interfaz(leds); // Mostrar la nueva luz
-                gpioDelay(*velocidad); // Esperar
-                leds[i + 1] = 0;  // Apagar después de moverse
+            // Mostrar el LED actual moviéndose de derecha a izquierda
+            for (j = i - 1; j >= 0; j--) {
+                leds[j] = 1;  // Encender la luz en la posición actual
+                interfaz(leds);  // Actualizar la interfaz
+                gpioDelay(*velocidad);  // Esperar un momento
+                leds[j] = 0;  // Apagar la luz al moverse
             }
-
-            interfaz(leds);  // Actualizar la interfaz
         }
-
-        // Pausar antes de continuar con la siguiente secuencia
-        gpioDelay(*velocidad);
     }
 
-    // Apagar los LEDs al salir de la secuencia
-    for (int i = 0; i < 8; i++) leds[i] = 0;
+    // Apagar todos los LEDs al salir de la secuencia
+    for (i = 0; i < 8; i++) leds[i] = 0;
     interfaz(leds);
     gpioTerminate();
     refresh();
     endwin();
 }
-
 
 // Secuencia "La carrera"
 void secuencia_carrera(int *velocidad) {
