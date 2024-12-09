@@ -3,106 +3,119 @@
 #include <string.h>
 #include <ncurses.h>
 #include <unistd.h>
+#include <pigpio.h>
 #include "secuencias.h"  // Incluir las funciones de secuencias
 
-#define CLAVE_CORRECTA "12345"  // La contraseña correcta de 5 dígitos
-#define MAX_INTENTOS 3  // Número máximo de intentos fallidos
+#define PCF8591_I2C_ADDR 0x48  // Dirección I2C del PCF8591
 
-// Función para pedir la contraseña y validarla
-int pedir_password() {
-    char password[6];  // La contraseña tiene 5 dígitos más el terminador
-    int intentos = 0;
+// Variable global para manejar el dispositivo I2C
+int i2cHandle;
 
-    // Inicializar ncurses para la entrada de la contraseña
-    initscr();          // Inicializa ncurses
-    noecho();           // No mostrar lo que se escribe
-    raw();              // Para que las teclas se ingresen sin esperar por ENTER
-    keypad(stdscr, TRUE);  // Para permitir las teclas especiales
-
-    while (intentos < MAX_INTENTOS) {
-        memset(password, 0, sizeof(password));  // Limpiar la variable password
-        mvprintw(0, 0, "Ingrese su password de 5 digitos: ");
-        for (int i = 0; i < 5; i++) {
-            char ch = getch();  // Leer cada carácter
-            if (ch == 10)  // Salir si se presiona ENTER
-                break;
-            password[i] = ch;
-            mvaddch(1, i, '*');  // Mostrar '*' en lugar de cada dígito
-        }
-        refresh();  // Actualizar la pantalla
-
-        // Compara la contraseña ingresada con la correcta
-        if (strcmp(password, CLAVE_CORRECTA) == 0) {
-            mvprintw(2, 0, "Bienvenido al Sistema\n");
-            refresh();
-            usleep(1000000);  // Pausar por 1 segundo
-            endwin();  // Termina ncurses
-            return 1;  // Contraseña correcta
-        } else {
-            mvprintw(2, 0, "Password no valida\n");
-            refresh();
-            usleep(1000000);  // Pausar por 1 segundo
-            intentos++;
-        }
+// Función para inicializar el PCF8591
+void inicializar_adc() {
+    gpioInitialise();  // Inicializar pigpio
+    i2cHandle = i2cOpen(1, PCF8591_I2C_ADDR, 0);  // Abrir comunicación I2C
+    if (i2cHandle < 0) {
+        endwin();
+        fprintf(stderr, "Error al inicializar el PCF8591\n");
+        exit(1);
     }
-
-    mvprintw(3, 0, "Demasiados intentos fallidos. Aborting.\n");
-    refresh();
-    usleep(1000000);  // Pausar por 1 segundo
-    endwin();  // Termina ncurses
-    return 0;  // Intentos fallidos
 }
 
-// Función para mostrar el menú de opciones
-void mostrar_menu() {
-    int opcion;
-    int velocidad = 500000; // Velocidad para las secuencias de LEDs
+// Función para leer un canal específico del PCF8591
+int leer_adc(int canal) {
+    i2cWriteByte(i2cHandle, 0x40 | (canal & 0x03));  // Seleccionar canal
+    usleep(1000);  // Esperar un poco para la conversión
+    return i2cReadByte(i2cHandle);  // Leer el valor ADC
+}
+
+// Función para mostrar el menú principal
+int mostrar_menu(int *velocidad, int adc_value) {
+    const char *opciones[] = {
+        "1. Secuencia 'Auto Fantastico'",
+        "2. Secuencia 'Choque'",
+        "3. Secuencia 'Apilada'",
+        "4. Secuencia 'Carrera'",
+        "5. Secuencia 'Escalera'",
+        "6. Salir"
+    };
+    int seleccion = 0;  // Índice de la opción seleccionada
+    int num_opciones = sizeof(opciones) / sizeof(opciones[0]);
+    int ch;
+
+    initscr();             // Inicializar ncurses
+    cbreak();              // Modo de entrada crudo
+    noecho();              // No mostrar la entrada del usuario
+    keypad(stdscr, TRUE);  // Habilitar teclas especiales
+    curs_set(0);           // Ocultar el cursor
 
     while (1) {
         clear();  // Limpiar pantalla
         mvprintw(0, 0, "Seleccione una opcion:\n");
-        mvprintw(1, 0, "1. Secuencia 'Auto fantastico'\n");
-        mvprintw(2, 0, "2. Secuencia 'Choque'\n");
-        mvprintw(3, 0, "3. Secuencia 'Apilada'\n");
-        mvprintw(4, 0, "4. Secuencia 'Carrera'\n");
-        mvprintw(5, 0, "5. Secuencia 'Escalera'\n");
-        mvprintw(6, 0, "6. Secuencia 'Personalizada 2'\n");
-        mvprintw(7, 0, "7. Secuencia 'Personalizada 3'\n");
-        mvprintw(8, 0, "8. Secuencia 'Personaliza 4'\n");
-        mvprintw(9, 0, "Presione F2 para salir.\n");
-        refresh();
-        opcion = getch();  // Esperar entrada de usuario
+        for (int i = 0; i < num_opciones; i++) {
+            if (i == seleccion) {
+                attron(A_REVERSE);  // Resaltar opción seleccionada
+                mvprintw(i + 1, 0, "%s", opciones[i]);
+                attroff(A_REVERSE);
+            } else {
+                mvprintw(i + 1, 0, "%s", opciones[i]);
+            }
+        }
 
-        switch(opcion) {
-            case '1':
-                secuencia_auto_fantastico(&velocidad);  // Llamar la secuencia auto fantástico
+        // Mostrar lectura del ADC y la velocidad ajustada
+        mvprintw(8, 0, "Lectura ADC: %d\n", adc_value);
+        mvprintw(9, 0, "Velocidad ajustada: %dus\n", *velocidad);
+
+        ch = getch();
+        switch (ch) {
+            case KEY_UP:  // Mover hacia arriba
+                seleccion = (seleccion > 0) ? seleccion - 1 : num_opciones - 1;
                 break;
-            case '2':
-                secuencia_choque(&velocidad);  // Llamar la secuencia choque
+            case KEY_DOWN:  // Mover hacia abajo
+                seleccion = (seleccion < num_opciones - 1) ? seleccion + 1 : 0;
                 break;
-            case '3':
-                secuencia_apilada(&velocidad);  // Llamar la secuencia apilada
-                break;
-            case '4':
-                secuencia_carrera(&velocidad);  // Llamar la secuencia carrera
-                break;
-            case '5':
-                secuencia_escalera(&velocidad);
-            case KEY_F(2):  // F2 para salir
-                return;
-            default:
-                mvprintw(6, 0, "Opción inválida.\n");
-                refresh();
-                usleep(1000000);  // Pausar por 1 segundo
-                break;
+            case 10:  // Enter
+                endwin();
+                return seleccion + 1;  // Devolver opción seleccionada
         }
     }
 }
 
 int main() {
-    if (pedir_password()) {  // Si la contraseña es correcta
-        mostrar_menu();  // Mostrar el menú de opciones
+    int velocidad = 500000;  // Velocidad inicial en microsegundos
+    int opcion, adc_value;
+
+    inicializar_adc();  // Inicializar el ADC
+
+    while (1) {
+        adc_value = leer_adc(0);  // Leer el canal 0 del ADC
+        velocidad = 100000 + (adc_value * 500);  // Ajustar velocidad según el ADC
+
+        opcion = mostrar_menu(&velocidad, adc_value);
+        switch (opcion) {
+            case 1:
+                secuencia_auto_fantastico(&velocidad);
+                break;
+            case 2:
+                secuencia_choque(&velocidad);
+                break;
+            case 3:
+                secuencia_apilada(&velocidad);
+                break;
+            case 4:
+                secuencia_carrera(&velocidad);
+                break;
+            case 5:
+                secuencia_escalera(&velocidad);
+                break;
+            case 6:
+                endwin();
+                gpioTerminate();
+                i2cClose(i2cHandle);
+                return 0;
+            default:
+                break;
+        }
     }
-    return 0;
 }
 
