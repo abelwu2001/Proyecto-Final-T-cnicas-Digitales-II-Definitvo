@@ -205,6 +205,7 @@ void secuencia_apilada(int *velocidad) {
 
 // Secuencia "La carrera"
 
+
 void secuencia_carrera(int *velocidad) {
     int leds[8] = {0};         // Array para representar los LEDs
     int luz1_pos = 0;          // Posición de la Luz 1
@@ -228,11 +229,12 @@ void secuencia_carrera(int *velocidad) {
             *velocidad = (*velocidad < 2000) ? *velocidad + 50 : *velocidad;
         }
 
-        luz2_velocidad = *velocidad / 2;  // Luz 2 al menos el doble de rápida que Luz 1
-
-        // Reiniciar posiciones para la carrera
+        // Reiniciar las posiciones
         luz1_pos = 0;
         luz2_pos = -1;
+
+        // Calcular la velocidad de Luz 2, al menos el doble de Luz 1
+        luz2_velocidad = *velocidad / 2; 
 
         // Secuencia en bucle
         while (luz1_pos < 8) {
@@ -253,31 +255,36 @@ void secuencia_carrera(int *velocidad) {
             }
 
             // Avanzar la Luz 2 independientemente
-            if (luz2_pos >= 0) {
-                if (tiempo_luz2 >= luz2_velocidad) {
-                    if (luz2_pos < 8) {
-                        leds[luz2_pos] = 1;
-                        luz2_pos++;
-                    }
-                    tiempo_luz2 = 0;
-                } else {
-                    tiempo_luz2++;
-                }
+            if (luz2_pos >= 0 && luz2_pos < 8) {
+                leds[luz2_pos] = 1;
+                luz2_pos++;
             }
 
-            interfaz(leds);          // Actualizar la interfaz con el estado actual
-            gpioDelay(*velocidad);  // Esperar según la velocidad de Luz 1
+            // Actualizar la interfaz de LEDs
+            interfaz(leds);
+
+            // Ajustar el tiempo de espera según las velocidades
+            if (luz2_pos < 0) {
+                gpioDelay(*velocidad); // Luz 1
+            } else {
+                gpioDelay(luz2_velocidad); // Luz 2
+            }
+
         }
     }
 
-    // Apagar todos los LEDs y limpiar recursos
-    for (int i = 0; i < 8; i++) leds[i] = 0;
+    // Apagar todos los LEDs al salir
+    for (int i = 0; i < 8; i++) {
+        leds[i] = 0;
+    }
     interfaz(leds);
     gpioTerminate();
     refresh();
     endwin();
 }
 
+
+// Secuencia "Escalera"
 void secuencia_escalera(int *velocidad) {
     int leds[8] = {0};
     int ch;
