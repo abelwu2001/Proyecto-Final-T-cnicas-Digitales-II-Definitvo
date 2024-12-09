@@ -65,9 +65,12 @@ void mostrar_menu() {
         mvprintw(2, 0, "2. Secuencia 'Choque'\n");
         mvprintw(3, 0, "3. Secuencia 'Apilada'\n");
         mvprintw(4, 0, "4. Secuencia 'Carrera'\n");
-        mvprintw(5, 0, "Presione F2 para salir.\n");
+        mvprintw(5, 0, "5. Secuencia 'Escalera'\n");
+        mvprintw(6, 0, "6. Secuencia 'Personalizada 2'\n");
+        mvprintw(7, 0, "7. Secuencia 'Personalizada 3'\n");
+        mvprintw(8, 0, "8. Secuencia 'Personaliza 4'\n");
+        mvprintw(9, 0, "Presione F2 para salir.\n");
         refresh();
-
         opcion = getch();  // Esperar entrada de usuario
 
         switch(opcion) {
@@ -83,6 +86,8 @@ void mostrar_menu() {
             case '4':
                 secuencia_carrera(&velocidad);  // Llamar la secuencia carrera
                 break;
+            case '5':
+                secuencia_escalera(&velocidad);
             case KEY_F(2):  // F2 para salir
                 return;
             default:

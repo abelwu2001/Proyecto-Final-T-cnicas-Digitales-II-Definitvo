@@ -206,63 +206,126 @@ void secuencia_apilada(int *velocidad) {
 // Secuencia "La carrera"
 
 void secuencia_carrera(int *velocidad) {
-    int leds[8] = {0};  // Array para representar los LEDs, todos apagados inicialmente
+    int leds[8] = {0};         // Array para representar los LEDs
+    int luz1_pos = 0;          // Posición de la Luz 1
+    int luz2_pos = -1;         // Posición de la Luz 2 (inicia inactiva)
+    int tiempo_luz2 = 0;       // Contador para la velocidad de la Luz 2
+    int luz2_velocidad;        // Velocidad de la Luz 2
     int ch;
 
-    gpioInitialise();   // Inicializa la librería de GPIO
-    initscr();           // Inicializa la interfaz ncurses
-    raw();               // Configura la entrada cruda
-    noecho();            // Desactiva el eco de teclas
-    keypad(stdscr, TRUE); // Habilita las teclas especiales
-    timeout(1);          // Configura un tiempo de espera para getch()
+    gpioInitialise();          // Inicializar GPIO
+    initscr();                 // Inicializar interfaz ncurses
+    raw();                     // Configuración de entrada cruda
+    noecho();                  // Desactiva el eco de teclas
+    keypad(stdscr, TRUE);      // Habilitar teclas especiales
+    timeout(1);                // Configura tiempo de espera para getch()
+
+    while ((ch = getch()) != KEY_F(2)) {  // Salir con F2
+        // Ajustar velocidad con las flechas
+        if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100) ? *velocidad - 50 : *velocidad;
+        } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 2000) ? *velocidad + 50 : *velocidad;
+        }
+
+        luz2_velocidad = *velocidad / 2;  // Luz 2 al menos el doble de rápida que Luz 1
+
+        // Reiniciar posiciones para la carrera
+        luz1_pos = 0;
+        luz2_pos = -1;
+
+        // Secuencia en bucle
+        while (luz1_pos < 8) {
+            // Apagar todos los LEDs
+            for (int i = 0; i < 8; i++) {
+                leds[i] = 0;
+            }
+
+            // Avanzar la Luz 1
+            if (luz1_pos < 8) {
+                leds[luz1_pos] = 1;
+                luz1_pos++;
+            }
+
+            // Activar la Luz 2 cuando Luz 1 esté a la mitad
+            if (luz1_pos == 4 && luz2_pos == -1) {
+                luz2_pos = 0;  // Luz 2 comienza desde el primer LED
+            }
+
+            // Avanzar la Luz 2 independientemente
+            if (luz2_pos >= 0) {
+                if (tiempo_luz2 >= luz2_velocidad) {
+                    if (luz2_pos < 8) {
+                        leds[luz2_pos] = 1;
+                        luz2_pos++;
+                    }
+                    tiempo_luz2 = 0;
+                } else {
+                    tiempo_luz2++;
+                }
+            }
+
+            interfaz(leds);          // Actualizar la interfaz con el estado actual
+            gpioDelay(*velocidad);  // Esperar según la velocidad de Luz 1
+        }
+    }
+
+    // Apagar todos los LEDs y limpiar recursos
+    for (int i = 0; i < 8; i++) leds[i] = 0;
+    interfaz(leds);
+    gpioTerminate();
+    refresh();
+    endwin();
+}
+
+void secuencia_escalera(int *velocidad) {
+    int leds[8] = {0};
+    int ch;
+    int i, j;
+
+    gpioInitialise();
+    initscr();
+    raw();
+    noecho();
+    keypad(stdscr, TRUE);
+    timeout(1);
 
     while ((ch = getch()) != KEY_F(2)) {  // Salir si se presiona F2
-        // Ajustar la velocidad con las teclas de flecha
+        // Cambiar la velocidad con las flechas
         if (ch == KEY_UP) {
-            *velocidad = (*velocidad > 100) ? *velocidad - 50 : *velocidad; // Decrecer velocidad
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
         } else if (ch == KEY_DOWN) {
-            *velocidad = (*velocidad < 2000) ? *velocidad + 50 : *velocidad; // Aumentar velocidad
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
         }
 
-        // Mover la primera luz a la mitad del recorrido (hasta el LED 4)
-        for (int i = 0; i < 4; i++) {
-            leds[i] = 1;               // Encender el LED actual
-            interfaz(leds);            // Actualizar la interfaz de LEDs
-            gpioDelay(*velocidad);     // Esperar con la velocidad definida
-            leds[i] = 0;               // Apagar el LED actual
-        }
+        // Inicializar LEDs apagados
+        for (i = 0; i < 8; i++) leds[i] = 0;
 
-        // Mover la segunda luz (a la mitad de la velocidad) comenzando desde el primer LED
-        for (int i = 0; i < 4; i++) {
-            leds[i] = 1;               // Encender el LED actual para la segunda luz
-            interfaz(leds);            // Actualizar la interfaz de LEDs
-            gpioDelay(*velocidad / 2); // Esperar con la velocidad rápida para la segunda luz
-            leds[i] = 0;               // Apagar el LED actual
-        }
+        // Comenzar la secuencia de apilado (de izquierda a derecha)
+        for (i = 0; i < 8; i++) {  // Iniciar desde el LED más a la izquierda
+            // Encender los LEDs secuencialmente
+            for (j = 0; j <= i; j++) {
+                leds[j] = 1;  // Encender el LED en la posición actual
+            }
+            interfaz(leds);  // Actualizar la interfaz
+            gpioDelay(*velocidad);  // Esperar un momento
 
-        // Ambas luces continúan hasta el último LED
-        for (int i = 4; i < 8; i++) {
-            leds[i] = 1;               // Encender el LED correspondiente
-            interfaz(leds);            // Actualizar la interfaz de LEDs
-            gpioDelay(*velocidad);     // Esperar con la velocidad normal para la primera luz
-            leds[i] = 0;               // Apagar el LED actual para la primera luz
-        }
-
-        // La segunda luz sigue hasta el último LED con el doble de velocidad
-        for (int i = 4; i < 8; i++) {
-            leds[i] = 1;               // Encender el LED correspondiente para la segunda luz
-            interfaz(leds);            // Actualizar la interfaz de LEDs
-            gpioDelay(*velocidad / 2); // Esperar con la velocidad rápida para la segunda luz
-            leds[i] = 0;               // Apagar el LED actual para la segunda luz
+            // Parpadeo en la última posición fijada (de derecha a izquierda)
+            for (int blink = 0; blink < 3; blink++) {  // Parpadeo de 3 veces
+                leds[i] = 1;  // Encender el LED
+                interfaz(leds);  // Actualizar la interfaz
+                gpioDelay(500000);  // Esperar medio segundo
+                leds[i] = 0;  // Apagar el LED
+                interfaz(leds);  // Actualizar la interfaz
+                gpioDelay(500000);  // Esperar medio segundo
+            }
         }
     }
 
     // Apagar todos los LEDs al salir de la secuencia
-    for (int i = 0; i < 8; i++) {
-        leds[i] = 0;
-    }
-    interfaz(leds);  // Apagar la interfaz de LEDs
-    gpioTerminate(); // Terminar la librería de GPIO
-    refresh();       // Actualizar la pantalla
-    endwin();        // Finalizar ncurses
+    for (i = 0; i < 8; i++) leds[i] = 0;
+    interfaz(leds);
+    gpioTerminate();
+    refresh();
+    endwin();
 }
