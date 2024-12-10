@@ -29,11 +29,14 @@ void interfaz(int *leds) {
 }
 
 // Secuencia "Auto fantástico"
+
+
 void secuencia_auto_fantastico(int *velocidad) {
     int numero = 1;  // Empezamos desde la luz más a la izquierda
     int leds[8] = {0};
     int ch;
     int direccion = 1; // 1 para izquierda a derecha, -1 para derecha a izquierda
+    int rows, cols;
 
     gpioInitialise();
     initscr();
@@ -41,6 +44,19 @@ void secuencia_auto_fantastico(int *velocidad) {
     noecho();
     keypad(stdscr, TRUE);
     timeout(1);
+
+    // Obtener las dimensiones de la pantalla
+    getmaxyx(stdscr, rows, cols);
+
+    // Definir las dimensiones de la ventana para el menú de la secuencia
+    int ventana_height = 6;  // Altura de la ventana (cuántas filas ocupará)
+    int ventana_width = 40;  // Ancho de la ventana (cuántas columnas ocupará)
+    int ventana_start_y = (rows - ventana_height) / 2;  // Centrar verticalmente
+    int ventana_start_x = (cols - ventana_width) / 2;   // Centrar horizontalmente
+
+    // Crear una ventana en ncurses
+    WINDOW *sec_window = newwin(ventana_height, ventana_width, ventana_start_y, ventana_start_x);
+    box(sec_window, 0, 0);  // Dibujar un borde alrededor de la ventana
 
     while ((ch = getch()) != KEY_F(2)) {  // Salir si se presiona F2
         // Cambiar la velocidad con las flechas
@@ -50,8 +66,9 @@ void secuencia_auto_fantastico(int *velocidad) {
             *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
         }
 
+        // Convertir el número a la representación binaria de los LEDs
         itob(numero, leds);
-        interfaz(leds);
+        interfaz(leds);  // Actualizar los LEDs
 
         // Mover la luz de izquierda a derecha o de derecha a izquierda
         if (direccion == 1) {  // Izquierda a derecha
@@ -69,25 +86,36 @@ void secuencia_auto_fantastico(int *velocidad) {
         }
 
         gpioDelay(*velocidad);  // Pausar según la velocidad definida
+
+        // Actualizar la ventana con el nombre de la secuencia y la velocidad
+        wclear(sec_window);  // Limpiar la ventana antes de actualizarla
+        box(sec_window, 0, 0);  // Redibujar el borde de la ventana
+
+        // Escribir el nombre de la secuencia y la velocidad en la ventana
+        mvwprintw(sec_window, 1, 2, "Secuencia: Auto Fantástico");
+        mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+        mvwprintw(sec_window, 4, 2, "Usa las flechas para ajustar velocidad");
+        mvwprintw(sec_window, 5, 2, "Presiona F2 para volver al menu");
+
+        wrefresh(sec_window);  // Actualizar la ventana
     }
 
-    // Apagar los LEDs al salir de la secuencia
+    // Apagar todos los LEDs al salir de la secuencia
     for (int i = 0; i < 8; i++) leds[i] = 0;
-    interfaz(leds);
-    gpioTerminate();
-    refresh();
-    endwin();
-}
+    interfaz(leds);  // Actualizar LEDs
 
+    gpioTerminate();  // Terminar la inicialización de GPIO
+    refresh();        // Actualizar la pantalla
+    endwin();         // Finalizar la ventana ncurses
+}
 
 // Secuencia "El choque"
 
 void secuencia_choque(int *velocidad) {
     int leds[8] = {0};
     int ch;
-    int izquierda = 1;  // Luz en la izquierda
-    int derecha = 128;  // Luz en la derecha
     int i, j;
+    int rows, cols;
 
     gpioInitialise();
     initscr();
@@ -95,6 +123,17 @@ void secuencia_choque(int *velocidad) {
     noecho();
     keypad(stdscr, TRUE);
     timeout(1);
+
+    // Obtener las dimensiones de la pantalla
+    getmaxyx(stdscr, rows, cols);
+
+    // Crear ventana centrada
+    int ventana_height = 8;
+    int ventana_width = 40;
+    int ventana_start_y = (rows - ventana_height) / 2;
+    int ventana_start_x = (cols - ventana_width) / 2;
+    WINDOW *sec_window = newwin(ventana_height, ventana_width, ventana_start_y, ventana_start_x);
+    box(sec_window, 0, 0);
 
     while ((ch = getch()) != KEY_F(2)) {  // Salir si se presiona F2
         // Cambiar la velocidad con las flechas
@@ -104,27 +143,23 @@ void secuencia_choque(int *velocidad) {
             *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
         }
 
-        // Apagar todos los LEDs antes de actualizar
-        for (int i = 0; i < 8; i++) leds[i] = 0;
+        // Limpiar los LEDs
+        for (int k = 0; k < 8; k++) leds[k] = 0;
 
-        // Colocar las luces en las posiciones adecuadas
-        leds[0] = (izquierda & 1);  // Luz de la izquierda
-        leds[7] = (derecha & 1);    // Luz de la derecha
-
-        // Avanzar las luces de izquierda y derecha
+        // Mover luces desde extremos hacia el centro
         for (i = 0, j = 7; i < 4 && j >= 4; i++, j--) {
-            leds[i] = 1;   // Luz de la izquierda avanza
-            leds[j] = 1;   // Luz de la derecha avanza
+            leds[i] = 1;  // Avanzar desde la izquierda
+            leds[j] = 1;  // Avanzar desde la derecha
             interfaz(leds);
             gpioDelay(*velocidad);
-            
+
             // Apagar las luces anteriores
             leds[i] = 0;
             leds[j] = 0;
         }
 
-        // Después de cruzarse, las luces siguen avanzando hasta los extremos
-        while (i < 8 && j >= 0) {
+        // Mover luces desde el centro hacia los extremos
+        for (; i < 8 && j >= 0; i++, j--) {
             leds[i] = 1;
             leds[j] = 1;
             interfaz(leds);
@@ -133,14 +168,24 @@ void secuencia_choque(int *velocidad) {
             // Apagar las luces anteriores
             leds[i] = 0;
             leds[j] = 0;
-            i++;
-            j--;
         }
+
+        // Actualizar la ventana con el estado actual
+        wclear(sec_window);
+        box(sec_window, 0, 0);
+        mvwprintw(sec_window, 1, 1, "Secuencia: Choque");
+        mvwprintw(sec_window, 3, 1, "Velocidad: %dus", *velocidad);
+        mvwprintw(sec_window, 5, 1, "Usa las flechas para ajustar velocidad");
+        mvwprintw(sec_window, 6, 1, "Presiona F2 para volver al menu");
+        wrefresh(sec_window);
     }
 
     // Apagar todos los LEDs al salir de la secuencia
-    for (int i = 0; i < 8; i++) leds[i] = 0;
+    for (int k = 0; k < 8; k++) leds[k] = 0;
     interfaz(leds);
+
+    // Limpiar y cerrar la ventana
+    delwin(sec_window);
     gpioTerminate();
     refresh();
     endwin();
@@ -159,6 +204,19 @@ void secuencia_apilada(int *velocidad) {
     noecho();            // Desactivar el eco de las teclas
     keypad(stdscr, TRUE);// Habilitar teclas especiales
     timeout(1);          // Configurar tiempo de espera en `getch`
+
+    // Crear ventana en ncurses para mostrar los mensajes
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);  // Obtener dimensiones de la pantalla
+    WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2);  // Ventana centrada
+    box(sec_window, 0, 0);  // Dibujar borde alrededor de la ventana
+
+    // Instrucciones en la ventana
+    mvwprintw(sec_window, 1, 2, "Secuencia: Apilada");
+    mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+    mvwprintw(sec_window, 3, 2, "Usa las Flechas para cambiar velocidad");
+    mvwprintw(sec_window, 4, 2, "Presiona F2 para volver al menu");
+    wrefresh(sec_window);  // Actualizar la ventana
 
     while ((ch = getch()) != KEY_F(2)) { // Salir con F2
         // Ajustar velocidad con flechas
@@ -193,15 +251,28 @@ void secuencia_apilada(int *velocidad) {
             leds[limit] = 1; // Asegurarse de que el LED quede fijo
             interfaz(leds);
         }
+
+        // Actualizar la ventana con la nueva velocidad
+        wclear(sec_window);  // Limpiar la ventana antes de actualizarla
+        box(sec_window, 0, 0);  // Redibujar el borde de la ventana
+        mvwprintw(sec_window, 1, 2, "Secuencia: Apilada");
+        mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+        mvwprintw(sec_window, 3, 2, "Usa las flechas para Cambiar velocidad");
+        mvwprintw(sec_window, 4, 2, "Presiona F2 para Volver al menu");
+        wrefresh(sec_window);  // Actualizar la ventana
     }
 
     // Apagar todos los LEDs y finalizar
     for (int i = 0; i < 8; i++) leds[i] = 0;
     interfaz(leds);
-    gpioTerminate();
-    refresh();
-    endwin();
+    
+    // Finalizar ncurses y limpiar
+    gpioTerminate();  // Terminar la inicialización de GPIO
+    refresh();  // Limpiar pantalla
+    endwin();  // Finalizar ncurses
 }
+
+
 
 // Secuencia "La carrera"
 
