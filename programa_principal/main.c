@@ -42,6 +42,16 @@ int pedir_password() {
     raw();              // Para que las teclas se ingresen sin esperar por ENTER
     keypad(stdscr, TRUE);  // Para permitir las teclas especiales
 
+    // Inicializar colores
+    if (!has_colors()) {
+        endwin();
+        fprintf(stderr, "Este terminal no soporta colores\n");
+        exit(1);
+    }
+    start_color();  // Inicializa el sistema de colores
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);  // Definir color blanco sobre fondo azul
+    init_pair(2, COLOR_BLACK, COLOR_WHITE); // Definir color negro sobre fondo blanco para resaltado
+
     while (intentos < MAX_INTENTOS) {
         memset(password, 0, sizeof(password));  // Limpiar la variable password
         mvprintw(0, 0, "Ingrese su password de 5 digitos: ");
@@ -68,73 +78,70 @@ int pedir_password() {
             intentos++;
         }
     }
-
     endwin();  // Termina ncurses
-    return 0;  // Contraseña incorrecta
+    return 0;  // Contraseña incorrecta después de varios intentos
 }
 
-// Función para crear una ventana centrada con bordes
-void crear_ventana(int startx, int starty, int width, int height) {
-    WINDOW *win = newwin(height, width, starty, startx);  // Crear ventana
-    box(win, 0, 0);  // Dibujar los bordes
-    wrefresh(win);  // Actualizar la ventana
-}
-
-// Función para mostrar el menú principal en una ventana centrada
-int mostrar_menu(int *velocidad, int adc_value) {
-    const char *opciones[] = {
-        "1. Secuencia 'Auto Fantastico'",
-        "2. Secuencia 'Choque'",
-        "3. Secuencia 'Apilada'",
-        "4. Secuencia 'Carrera'",
-        "5. Secuencia 'Escalera'",
-        "6. Salir"
-    };
-    int seleccion = 0;  // Índice de la opción seleccionada
-    int num_opciones = sizeof(opciones) / sizeof(opciones[0]);
+// Función para mostrar el menú con contorno visible en la opción seleccionada
+void mostrar_menu(int *velocidad, int adc_value) {
+    int seleccion = 0;
+    int num_opciones = 6;  // Hay 6 opciones en el menú
     int ch;
 
     // Inicializar ncurses
-    initscr();             
-    cbreak();              
-    noecho();              
-    keypad(stdscr, TRUE);  
-    curs_set(0);           // Ocultar el cursor
+    initscr();          // Inicializa ncurses
+    noecho();           // No mostrar lo que se escribe
+    raw();              // Para que las teclas se ingresen sin esperar por ENTER
+    keypad(stdscr, TRUE);  // Para permitir las teclas especiales
 
-    // Obtener dimensiones de la pantalla
-    int altura, ancho;
-    getmaxyx(stdscr, altura, ancho);
+    // Inicializar colores
+    if (!has_colors()) {
+        endwin();
+        fprintf(stderr, "Este terminal no soporta colores\n");
+        exit(1);
+    }
+    start_color();  // Inicializa el sistema de colores
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);  // Definir color blanco sobre fondo azul
+    init_pair(2, COLOR_BLACK, COLOR_WHITE); // Definir color negro sobre fondo blanco para resaltado
 
-    // Definir dimensiones de la ventana centrada
-    int ventana_height = 10;
-    int ventana_width = 40;
-    int startx = (ancho - ventana_width) / 2;
-    int starty = (altura - ventana_height) / 2;
+    // Crear una ventana de fondo azul para el menú
+    int startx = 10, starty = 5, width = 40, height = 10;
+    WINDOW *menu_win = newwin(height, width, starty, startx);
+    wbkgd(menu_win, COLOR_PAIR(1));  // Fondo azul
+    box(menu_win, 0, 0);  // Borde alrededor de la ventana
+    refresh();
+    wrefresh(menu_win);
 
-    // Crear la ventana centrada con bordes
-    crear_ventana(startx, starty, ventana_width, ventana_height);
+    // Opciones del menú
+    char *opciones[] = {
+        "1. Secuencia Auto Fantástico",
+        "2. Secuencia Choque",
+        "3. Secuencia Apilada",
+        "4. Secuencia Carrera",
+        "5. Secuencia Escalera",
+        "6. Salir"
+    };
+
+    // Mostrar las opciones en el menú
+    for (int i = 0; i < num_opciones; i++) {
+        if (i == seleccion) {
+            // Resaltar la opción seleccionada con un borde y texto invertido
+            wattron(menu_win, A_REVERSE);  // Activar el atributo de texto invertido
+            mvwprintw(menu_win, i + 1, 2, opciones[i]);
+            wattroff(menu_win, A_REVERSE);  // Desactivar el atributo de texto invertido
+        } else {
+            mvwprintw(menu_win, i + 1, 2, opciones[i]);
+        }
+    }
+
+    // Mostrar lectura del ADC y la velocidad ajustada
+    mvwprintw(menu_win, height - 3, 2, "Lectura ADC: %d", adc_value);
+    mvwprintw(menu_win, height - 2, 2, "Velocidad ajustada: %dus", *velocidad);
+
+    // Actualizar la pantalla
+    wrefresh(menu_win);
 
     while (1) {
-        clear();  // Limpiar pantalla
-        mvprintw(0, 0, "Seleccione una opcion:\n");
-        
-        // Dibujar las opciones centradas
-        for (int i = 0; i < num_opciones; i++) {
-            int x = startx + (ventana_width - strlen(opciones[i])) / 2;  // Centrar texto horizontalmente
-            int y = starty + 1 + i;  // Ajustar la posición vertical
-            if (i == seleccion) {
-                attron(A_REVERSE);  // Resaltar opción seleccionada
-                mvprintw(y, x, "%s", opciones[i]);
-                attroff(A_REVERSE);
-            } else {
-                mvprintw(y, x, "%s", opciones[i]);
-            }
-        }
-
-        // Mostrar lectura del ADC y la velocidad ajustada
-        mvprintw(starty + 8, startx, "Lectura ADC: %d", adc_value);
-        mvprintw(starty + 9, startx, "Velocidad ajustada: %dus", *velocidad);
-
         ch = getch();
         switch (ch) {
             case KEY_UP:  // Mover hacia arriba
@@ -146,7 +153,7 @@ int mostrar_menu(int *velocidad, int adc_value) {
             case 10:  // Enter (seleccionar opción)
                 if (seleccion == 5) {
                     endwin();  // Salir del menú
-                    return 0;
+                    return;
                 }
                 // Aquí puedes ejecutar la secuencia correspondiente según la opción seleccionada
                 switch (seleccion) {
@@ -168,10 +175,25 @@ int mostrar_menu(int *velocidad, int adc_value) {
                 }
                 break;
         }
+
+        // Volver a mostrar el menú después de seleccionar
+        werase(menu_win);  // Limpiar la ventana
+        box(menu_win, 0, 0);  // Borde alrededor de la ventana
+        for (int i = 0; i < num_opciones; i++) {
+            if (i == seleccion) {
+                wattron(menu_win, A_REVERSE);
+                mvwprintw(menu_win, i + 1, 2, opciones[i]);
+                wattroff(menu_win, A_REVERSE);
+            } else {
+                mvwprintw(menu_win, i + 1, 2, opciones[i]);
+            }
+        }
+        mvwprintw(menu_win, height - 3, 2, "Lectura ADC: %d", adc_value);
+        mvwprintw(menu_win, height - 2, 2, "Velocidad ajustada: %dus", *velocidad);
+        wrefresh(menu_win);  // Actualizar la pantalla
     }
 
     endwin();  // Finalizar ncurses
-    return 0;
 }
 
 int main() {
