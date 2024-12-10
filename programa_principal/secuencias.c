@@ -191,7 +191,6 @@ void secuencia_choque(int *velocidad) {
     endwin();
 }
 
-
 // Secuencia "La apilada"
 
 void secuencia_apilada(int *velocidad) {
@@ -341,29 +340,40 @@ void secuencia_carrera(int *velocidad) {
     endwin();         // Cerrar la ventana ncurses
 }
 
-
-
 // Secuencia "Escalera"
 void secuencia_escalera(int *velocidad) {
     int leds[8] = {0};
     int ch;
     int i, j;
 
-    gpioInitialise();
-    initscr();
-    raw();
-    noecho();
-    keypad(stdscr, TRUE);
-    timeout(1);
+    gpioInitialise();  // Inicialización de GPIO
+    initscr();         // Inicializar interfaz ncurses
+    raw();             // Configuración de entrada cruda
+    noecho();          // Desactiva el eco de teclas
+    keypad(stdscr, TRUE);  // Habilitar teclas especiales
+    timeout(1);        // Configura tiempo de espera para getch()
 
-    while ((ch = getch()) != KEY_F(2)) {  // Salir si se presiona F2
-        // Cambiar la velocidad con las flechas
+    // Crear ventana para mostrar las instrucciones
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);  // Obtener dimensiones de la pantalla
+    WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2);  // Ventana centrada
+    box(sec_window, 0, 0);  // Dibujar borde alrededor de la ventana
+
+    // Instrucciones en la ventana
+    mvwprintw(sec_window, 1, 2, "Secuencia: Escalera");
+    mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+    mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+    mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+    wrefresh(sec_window);  // Actualizar la ventana
+
+    while ((ch = getch()) != KEY_F(2)) {  // Salir con F2
+        // Ajustar velocidad con las flechas
         if (ch == KEY_UP) {
             *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
         } else if (ch == KEY_DOWN) {
             *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
         }
-
+               
         // Inicializar LEDs apagados
         for (i = 0; i < 8; i++) leds[i] = 0;
 
@@ -383,7 +393,8 @@ void secuencia_escalera(int *velocidad) {
                 gpioDelay(500000);  // Esperar medio segundo
                 leds[i] = 0;  // Apagar el LED
                 interfaz(leds);  // Actualizar la interfaz
-                gpioDelay(500000);  // Esperar medio segundo
+                gpioDelay(500000);  // Esperar medio segundo            
+
             }
         }
     }
@@ -391,7 +402,9 @@ void secuencia_escalera(int *velocidad) {
     // Apagar todos los LEDs al salir de la secuencia
     for (i = 0; i < 8; i++) leds[i] = 0;
     interfaz(leds);
+
+    // Finalizar
     gpioTerminate();
-    refresh();
-    endwin();
+    wrefresh(sec_window);  // Actualizar la ventana
+    endwin();              // Cerrar la ventana ncurses
 }
