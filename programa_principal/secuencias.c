@@ -568,3 +568,193 @@ void secuencia_chispas(int *velocidad) {
             interfaz(leds); // Actualizar LEDs
 
 }
+
+void secuencia_sirena(int *velocidad) {
+    int leds[8] = {0};  // Iniciar todos los LEDs apagados
+    int ch;
+    int tabla_sirena[16][8] = {
+        {1, 0, 1, 0, 1, 0, 1, 0},  // 10101010
+        {0, 1, 0, 1, 0, 1, 0, 1},  // 01010101
+        {1, 1, 1, 1, 0, 0, 0, 0},  // 11110000
+        {0, 0, 0, 0, 1, 1, 1, 1},  // 00001111
+        {1, 1, 1, 1, 1, 1, 0, 0},  // 11111100
+        {0, 0, 0, 0, 0, 0, 1, 1},  // 00000011
+        {1, 0, 0, 0, 0, 0, 0, 0},  // 10000000
+        {0, 0, 0, 0, 0, 0, 0, 1},  // 00000001
+        {1, 1, 0, 0, 1, 1, 0, 0},  // 11001100
+        {0, 0, 1, 1, 0, 0, 1, 1},  // 00110011
+        {1, 0, 1, 0, 1, 0, 1, 0},  // 10101010 (Patrón alternado)
+        {0, 1, 0, 1, 0, 1, 0, 1},  // 01010101 (Patrón alternado invertido)
+        {1, 1, 1, 1, 0, 0, 0, 0},  // 11110000
+        {0, 0, 0, 0, 1, 1, 1, 1},  // 00001111
+        {1, 0, 0, 0, 0, 0, 0, 0},  // 10000000
+    };
+
+    // Inicializar ncurses
+    initscr();  
+    raw();     
+    noecho();
+    keypad(stdscr, TRUE);
+    timeout(1);  // Tiempo de espera para getch()
+
+    // Crear ventana para las instrucciones
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);  // Obtener dimensiones de la pantalla
+    WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2); // Ventana centrada
+    box(sec_window, 0, 0); // Dibujar borde alrededor de la ventana
+
+    // Instrucciones en la ventana
+    mvwprintw(sec_window, 1, 2, "Secuencia: Sirena de Luz");
+    mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+    mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+    mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+    wrefresh(sec_window);  // Actualizar la ventana
+
+    while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+        // Ajustar velocidad con las flechas
+        if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+        } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+        }
+
+        // Iterar a través de la tabla para mostrar la secuencia de la sirena
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 8; j++) {
+
+            
+            if ((ch = getch()) == KEY_F(2)) {
+            for (int k = 0; k < 8; k++) leds[k] = 0;
+            interfaz(leds); // Actualizar LEDs
+            return; // Salir inmediatamente
+            } else if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+            } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+            }
+            wclear(sec_window);
+            box(sec_window, 0, 0);  // Redibujar el borde de la ventana
+            mvwprintw(sec_window, 1, 2, "Secuencia: Sirena de Luz");
+            mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+            mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+            mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+            wrefresh(sec_window);  // Actualizar la ventana
+
+            leds[j] = tabla_sirena[i][j];  // Actualizar LEDs según la tabla
+            }
+
+            interfaz(leds);  // Actualizar la interfaz de LEDs
+
+            // Limpiar y actualizar la ventana con la nueva velocidad
+            wclear(sec_window);
+            box(sec_window, 0, 0);  // Redibujar el borde de la ventana
+            mvwprintw(sec_window, 1, 2, "Secuencia: Sirena de Luz");
+            mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+            mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+            mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+            wrefresh(sec_window);  // Actualizar la ventana
+
+            usleep(*velocidad);  // Espera entre cada paso para simular la sirena
+
+            // Si se presiona F2, terminar la secuencia
+            if (ch == KEY_F(2)) {
+                break;
+            }
+        }
+    }
+
+    // Finalizar ncurses
+    endwin();
+}
+
+
+void secuencia_matrix(int *velocidad) {
+    int leds[8] = {0};  // Iniciar todos los LEDs apagados
+    int ch;
+    int tabla_sirena[8][8] = {
+        {1, 0, 1, 0, 1, 0, 1, 0},  // 10101010
+        {0, 1, 0, 1, 0, 1, 0, 1},  // 01010101
+        {1, 0, 1, 0, 1, 0, 1, 0},  // 11110000
+        {1, 1, 0, 1, 1, 0, 1, 1},  // 00001111
+        {0, 1, 1, 0, 1, 1, 0, 1},  // 11111100
+        {0, 0, 1, 1, 0, 1, 1, 0},  // 00000011
+        {0, 0, 0, 1, 1, 0, 1, 1},  // 10000000
+    };
+
+    // Inicializar ncurses
+    initscr();  
+    raw();     
+    noecho();
+    keypad(stdscr, TRUE);
+    timeout(1);  // Tiempo de espera para getch()
+
+    // Crear ventana para las instrucciones
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);  // Obtener dimensiones de la pantalla
+    WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2); // Ventana centrada
+    box(sec_window, 0, 0); // Dibujar borde alrededor de la ventana
+
+    // Instrucciones en la ventana
+    mvwprintw(sec_window, 1, 2, "Secuencia: Matrix");
+    mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+    mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+    mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+    wrefresh(sec_window);  // Actualizar la ventana
+
+    while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+        // Ajustar velocidad con las flechas
+        if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+        } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+        }
+
+        // Iterar a través de la tabla para mostrar la secuencia de la sirena
+        for (int i = 0; i < 7; i++) {
+            for (int j = 0; j < 8; j++) {
+
+            
+            if ((ch = getch()) == KEY_F(2)) {
+            for (int k = 0; k < 8; k++) leds[k] = 0;
+            interfaz(leds); // Actualizar LEDs
+            return; // Salir inmediatamente
+            } else if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+            } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+            }
+            wclear(sec_window);
+            box(sec_window, 0, 0);  // Redibujar el borde de la ventana
+            mvwprintw(sec_window, 1, 2, "Secuencia: Matrix");
+            mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+            mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+            mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+            wrefresh(sec_window);  // Actualizar la ventana
+
+            leds[j] = tabla_sirena[i][j];  // Actualizar LEDs según la tabla
+            }
+
+            interfaz(leds);  // Actualizar la interfaz de LEDs
+
+            // Limpiar y actualizar la ventana con la nueva velocidad
+            wclear(sec_window);
+            box(sec_window, 0, 0);  // Redibujar el borde de la ventana
+            mvwprintw(sec_window, 1, 2, "Secuencia: Matrix");
+            mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+            mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+            mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+            wrefresh(sec_window);  // Actualizar la ventana
+
+            usleep(*velocidad);  // Espera entre cada paso para simular la sirena
+
+            // Si se presiona F2, terminar la secuencia
+            if (ch == KEY_F(2)) {
+                break;
+            }
+        }
+    }
+
+    // Finalizar ncurses
+    endwin();
+}
+
