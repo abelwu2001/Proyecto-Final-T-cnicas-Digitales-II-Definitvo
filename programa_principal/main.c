@@ -85,7 +85,7 @@ int pedir_password() {
 // Función para mostrar el menú con contorno visible en la opción seleccionada
 void mostrar_menu(int *velocidad, int adc_value) {
     int seleccion = 0;
-    int num_opciones = 6;  // Hay 6 opciones en el menú
+    int num_opciones = 7;  // Hay 7 opciones en el menú
     int ch;
 
     // Inicializar ncurses
@@ -105,7 +105,7 @@ void mostrar_menu(int *velocidad, int adc_value) {
     init_pair(2, COLOR_BLACK, COLOR_WHITE); // Definir color negro sobre fondo blanco para resaltado
 
     // Crear una ventana de fondo azul para el menú
-    int startx = 10, starty = 5, width = 40, height = 10;
+    int startx = 10, starty = 5, width = 40, height = 12;
     WINDOW *menu_win = newwin(height, width, starty, startx);
     wbkgd(menu_win, COLOR_PAIR(1));  // Fondo azul
     box(menu_win, 0, 0);  // Borde alrededor de la ventana
@@ -119,7 +119,8 @@ void mostrar_menu(int *velocidad, int adc_value) {
         "3. Secuencia Apilada",
         "4. Secuencia Carrera",
         "5. Secuencia Escalera",
-        "6. Salir"
+        "6. Secuencia Chispas",
+        "7. Salir"
     };
 
     // Mostrar las opciones en el menú
@@ -151,7 +152,7 @@ void mostrar_menu(int *velocidad, int adc_value) {
                 seleccion = (seleccion < num_opciones - 1) ? seleccion + 1 : 0;
                 break;
             case 10:  // Enter (seleccionar opción)
-                if (seleccion == 5) {
+                if (seleccion == 6) {
                     endwin();  // Salir del menú
                     return;
                 }
@@ -172,6 +173,8 @@ void mostrar_menu(int *velocidad, int adc_value) {
                     case 4:
                         secuencia_escalera(velocidad);  // Ejecutar secuencia Escalera
                         break;
+                    case 5:
+                        secuencia_chispas(velocidad);
                 }
                 break;
         }

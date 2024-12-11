@@ -7,6 +7,7 @@ void secuencia_choque(int *velocidad);
 void secuencia_apilada(int *velocidad);
 void secuencia_carrera(int *velocidad);
 void secuencia_escalera(int *velocidad);
+void secuencia_chispas(int *velocidad);
 
 #endif
 

@@ -9,6 +9,8 @@
 #define LED6 16
 #define LED7 20
 #define LED8 21
+#include <time.h>
+#include <stdlib.h>
 void itob(int numero, int *leds) {
 for (int i = 0; i < 8; i++) {
 leds[i] = (numero >> (7 - i)) & 1;
@@ -384,6 +386,9 @@ void secuencia_carrera(int *velocidad) {
     delwin(sec_window);
     endwin();
     gpioTerminate();
+ for (int k = 0; k < 8; k++) leds[k] = 0;
+            interfaz(leds); // Actualizar LEDs
+    
 }
 
 
@@ -478,58 +483,88 @@ gpioTerminate();
 wrefresh(sec_window); // Actualizar la ventana
 endwin(); // Cerrar la ventana ncurses
 }
-void secuencia_espiral(int *velocidad) {
-// Tabla de datos para la secuencia en espiral
-int tabla_espiral[16][8] = {
-{1, 0, 0, 0, 0, 0, 0, 1}, // Paso 1
-{1, 1, 0, 0, 0, 0, 1, 1}, // Paso 2
-{1, 1, 1, 0, 0, 1, 1, 1}, // Paso 3
-{1, 1, 1, 1, 1, 1, 1, 1}, // Paso 4 (completo)
-{0, 1, 1, 1, 1, 1, 1, 0}, // Paso 5
-{0, 0, 1, 1, 1, 1, 0, 0}, // Paso 6
-{0, 0, 0, 1, 1, 0, 0, 0}, // Paso 7
-{0, 0, 0, 0, 0, 0, 0, 0}, // Paso 8 (apagar todo)
-{0, 0, 0, 1, 1, 0, 0, 0}, // Paso 9 (espiral inversa)
-{0, 0, 1, 1, 1, 1, 0, 0}, // Paso 10
-{0, 1, 1, 1, 1, 1, 1, 0}, // Paso 11
-{1, 1, 1, 1, 1, 1, 1, 1}, // Paso 12 (completo de nuevo)
-{1, 1, 1, 0, 0, 1, 1, 1}, // Paso 13
-{1, 1, 0, 0, 0, 0, 1, 1}, // Paso 14
-{1, 0, 0, 0, 0, 0, 0, 1}, // Paso 15
-{0, 0, 0, 0, 0, 0, 0, 0}, // Paso 16 (apagar todo)
-};
-int ch;
-int rows, cols;
-gpioInitialise();
-initscr();
-raw();
-noecho();
-keypad(stdscr, TRUE);
-timeout(1);
-// Crear ventana para mostrar información
-getmaxyx(stdscr, rows, cols);
-WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2);
-box(sec_window, 0, 0);
-mvwprintw(sec_window, 1, 2, "Secuencia: Espiral");
-mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
-mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
-mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
-wrefresh(sec_window);
-while ((ch = getch()) != KEY_F(2)) { // Salir con F2
-if (ch == KEY_UP) {
-*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
-} else if (ch == KEY_DOWN) {
-*velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+
+
+void secuencia_chispas(int *velocidad) {
+   
+        int leds[8] = {0};
+    int ch;
+    int i;
+    srand(time(NULL)); // Inicializar el generador de números aleatorios
+
+    gpioInitialise(); // Inicialización de GPIO
+    initscr(); // Inicializar ncurses
+    raw(); // Configuración de entrada cruda
+    noecho(); // Desactivar eco de teclas
+    keypad(stdscr, TRUE); // Habilitar teclas especiales
+    timeout(1); // Establecer tiempo de espera para getch()
+
+    // Crear ventana para instrucciones
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols); // Obtener dimensiones de la pantalla
+    WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2); // Ventana centrada
+    box(sec_window, 0, 0); // Dibujar borde alrededor de la ventana
+
+    // Instrucciones en la ventana
+    mvwprintw(sec_window, 1, 2, "Secuencia: Chispas");
+    mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+    mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+    mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+    wrefresh(sec_window); // Actualizar la ventana
+
+    while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+        // Ajustar velocidad con las flechas
+        if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+        } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+        }
+
+        // Secuencia de chispas (encender LEDs aleatorios)
+        for (i = 0; i < 8; i++) {
+            // Apagar todos los LEDs
+            for (int j = 0; j < 8; j++) leds[j] = 0;
+            
+            if ((ch = getch()) == KEY_F(2)) {
+            for (int k = 0; k < 8; k++) leds[k] = 0;
+            interfaz(leds); // Actualizar LEDs
+            return; // Salir inmediatamente
+            } else if (ch == KEY_UP) {
+            *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+            } else if (ch == KEY_DOWN) {
+            *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+            }
+
+        wclear(sec_window); 
+        box(sec_window, 0, 0); 
+        mvwprintw(sec_window, 1, 2, "Secuencia: Chispas");
+        mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+        mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+        mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+        wrefresh(sec_window); // Actualizar la ventana
+
+            // Encender un LED aleatorio
+            leds[rand() % 8] = 1;
+
+            // Actualizar los LEDs
+            interfaz(leds);
+            usleep(*velocidad); // Esperar según la velocidad definida
+        }
+
+        // Limpiar la ventana antes de actualizarla
+        wclear(sec_window); 
+        box(sec_window, 0, 0); 
+        mvwprintw(sec_window, 1, 2, "Secuencia: Chispas");
+        mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+        mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+        mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+        wrefresh(sec_window); // Actualizar la ventana
+    }
+
+    // Finalizar ncurses y GPIO
+    endwin();
+    gpioTerminate();
+     for (int k = 0; k < 8; k++) leds[k] = 0;
+            interfaz(leds); // Actualizar LEDs
+
 }
-for (int i = 0; i < 16; i++) {
-interfaz(tabla_espiral[i]); // Actualizar LEDs según la tabla
-gpioDelay(*velocidad); // Esperar según la velocidad configurada
-}
-}
-// Apagar LEDs al salir
-int leds_apagados[8] = {0};
-interfaz(leds_apagados);
-gpioTerminate();
-refresh();
-endwin();
-} 
