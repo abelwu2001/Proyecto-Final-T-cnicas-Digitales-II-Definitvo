@@ -32,7 +32,7 @@ Este proyecto consiste en integrar dichos ejercicios de la siguiente manera:
   - ❌ (Para elegir) 
 
 2. En modo remoto la selección desde el menú de la secuencia de luces a ejecutar será similar al modo local, pero las secuencias se ejecutarán en el hardware remoto, enviando los datos de control a través del puerto serie.
-  - ❌ (Para elegir) 
+  - ❌ (Para elegir) -Dependiente del A/D
 
 - Como opción genere una sección destinada a establecer las velocidades iniciales de las secuencias realizando el ajuste de los potenciómetros.
   - ⚠️ (En proceso) 
