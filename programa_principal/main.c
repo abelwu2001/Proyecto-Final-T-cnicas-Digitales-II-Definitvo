@@ -9,6 +9,9 @@
 #define PCF8591_I2C_ADDR 0x48  // Dirección I2C del PCF8591
 #define CLAVE_CORRECTA "12345" // Contraseña correcta
 #define MAX_INTENTOS 3       // Número máximo de intentos
+extern int comparar_contrasena(const char* entrada, const char* correcta); // Declaración de la función ensamblador
+
+
 
 // Variable global para manejar el dispositivo I2C
 int i2cHandle;
@@ -32,6 +35,7 @@ int leer_adc(int canal) {
 }
 
 // Función para pedir la contraseña
+
 int pedir_password() {
     char password[6];  // La contraseña tiene 5 dígitos más el terminador
     int intentos = 0;
@@ -41,16 +45,6 @@ int pedir_password() {
     noecho();           // No mostrar lo que se escribe
     raw();              // Para que las teclas se ingresen sin esperar por ENTER
     keypad(stdscr, TRUE);  // Para permitir las teclas especiales
-
-    // Inicializar colores
-    if (!has_colors()) {
-        endwin();
-        fprintf(stderr, "Este terminal no soporta colores\n");
-        exit(1);
-    }
-    start_color();  // Inicializa el sistema de colores
-    init_pair(1, COLOR_WHITE, COLOR_BLUE);  // Definir color blanco sobre fondo azul
-    init_pair(2, COLOR_BLACK, COLOR_WHITE); // Definir color negro sobre fondo blanco para resaltado
 
     while (intentos < MAX_INTENTOS) {
         memset(password, 0, sizeof(password));  // Limpiar la variable password
@@ -64,23 +58,29 @@ int pedir_password() {
         }
         refresh();  // Actualizar la pantalla
 
-        // Compara la contraseña ingresada con la correcta
-        if (strcmp(password, CLAVE_CORRECTA) == 0) {
-            mvprintw(2, 0, "Bienvenido al Sistema\n");
-            refresh();
-            usleep(1000000);  // Pausar por 1 segundo
-            endwin();  // Termina ncurses
-            return 1;  // Contraseña correcta
+        // Llamar a la función de ensamblador para comparar la contraseña
+        int resultado = comparar_contrasena(password, CLAVE_CORRECTA);
+        
+        // Compara el resultado con 1 (correcta) o -1 (incorrecta)
+        if (resultado == 1) {
+            mvprintw(2, 0, "Contraseña correcta. Bienvenido!\n");
+            refresh();  // Actualiza la pantalla para mostrar el mensaje de éxito
+            return 1;  // Retorna 1 si la contraseña es correcta
         } else {
-            mvprintw(2, 0, "Password no valida\n");
-            refresh();
-            usleep(1000000);  // Pausar por 1 segundo
-            intentos++;
+            intentos++;  // Incrementa el contador de intentos fallidos
+            mvprintw(2, 0, "Contraseña incorrecta. Intentos restantes: %d", MAX_INTENTOS - intentos);
+            refresh();  // Actualiza la pantalla para mostrar el número de intentos restantes
+            usleep(1000000);  // Espera 1 segundo antes de pedir la contraseña nuevamente
         }
     }
-    endwin();  // Termina ncurses
-    return 0;  // Contraseña incorrecta después de varios intentos
+
+    mvprintw(3, 0, "Número máximo de intentos alcanzado. Acceso denegado.");
+    refresh();  // Muestra mensaje de acceso denegado después de agotar los intentos
+    usleep(2000000);  // Espera 2 segundos antes de cerrar el programa
+    endwin();  // Finaliza ncurses
+    return 0;  // Retorna 0 si se excedieron los intentos
 }
+
 
 // Función para mostrar el menú con contorno visible en la opción seleccionada
 void mostrar_menu(int *velocidad, int adc_value) {
@@ -206,17 +206,20 @@ void mostrar_menu(int *velocidad, int adc_value) {
 }
 
 int main() {
+
+
+int acceso = pedir_password();
+    if (acceso == 0) {
+        // Si la contraseña no es correcta después de 3 intentos, salir del programa
+        return 1;
+    }
+
+
     int velocidad = 0;
     int adc_value = 0;
 
     // Inicializar el ADC
     inicializar_adc();
-
-    // Pedir la contraseña
-    if (pedir_password() == 0) {
-        printf("Contraseña incorrecta\n");
-        return 0;
-    }
 
     // Leer valor del ADC
     adc_value = leer_adc(0);  // Leer canal 0 del ADC
