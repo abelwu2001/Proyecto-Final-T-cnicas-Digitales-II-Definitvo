@@ -30,9 +30,15 @@ Este proyecto consiste en integrar dichos ejercicios de la siguiente manera:
 - Generar una opción en el programa que permita establecer dos modos de trabajo: local y remoto. En modo local las secuencias de luces se ejecutarán en los leds que se encuentran en el hardware adicionado a la placa Raspberry donde se ejecuta el programa. Existen dos opciones para el modo remoto dependiendo de la disponibilidad de hardware de cada grupo, hacer una de las dos opciones siguientes:
   - ❌ (Pendiente) 
 
-- En modo remoto las secuencias se ejecutarán sobre el hardware adicional colocado en otra Raspberry y conectada a la que ejecuta el programa mediante un cable serie RS-232. Se podrá usar el mismo programa para implementar esta opción en las dos Raspberry o realizar uno principal y otro secundario. 
-  - ❌ (Pendiente) 
+1. En modo remoto las secuencias se ejecutarán sobre el hardware adicional colocado en otra Raspberry y conectada a la que ejecuta el programa mediante un cable serie RS-232. Se podrá usar el mismo programa para implementar esta opción en las dos Raspberry o realizar uno principal y otro secundario. 
+  - ❌ (Para elegir) 
 
-- En modo remoto la selección desde el menú de la secuencia de luces a ejecutar será similar al modo local, pero las secuencias se ejecutarán en el hardware remoto, enviando los datos de control a través del puerto serie.
-  - ❌ (Pendiente) 
+2. En modo remoto la selección desde el menú de la secuencia de luces a ejecutar será similar al modo local, pero las secuencias se ejecutarán en el hardware remoto, enviando los datos de control a través del puerto serie.
+  - ❌ (Para elegir) 
+
+- Como opción genere una sección destinada a establecer las velocidades iniciales de las secuencias realizando el ajuste de los potenciómetros.
+  - ⚠️ (En proceso) 
+
+- Escriba una función externa en código ensamblador de ARM la cual será llamada desde el programa principal. Esta función deberá realizar algún proceso simple dentro del programa (switch case, loop, etc). El estudiante decidirá el proceso a resolver por la función y el lugar donde se usará.
+  - ⚠️ (En proceso) 
 
