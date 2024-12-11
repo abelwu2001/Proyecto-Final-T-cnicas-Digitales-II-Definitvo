@@ -300,62 +300,89 @@ refresh(); // Limpiar pantalla
 endwin(); // Finalizar ncurses
 }
 // Secuencia "La carrera"
-void secuencia_carrera(int *velocidad) {
-int leds[8] = {0}; // Array para representar los LEDs
-int luz1_pos = 0; // Posición de la Luz 1
-int luz2_pos = -1; // Posición de la Luz 2 (inicia inactiva)
+
+
+
+
+
+
+
+
+
+
+
+
+// Secuencia "Escalera"
+void secuencia_escalera(int *velocidad) {
+int leds[8] = {0};
 int ch;
-gpioInitialise(); // Inicializar GPIO
+int i, j;
+gpioInitialise(); // Inicialización de GPIO
 initscr(); // Inicializar interfaz ncurses
 raw(); // Configuración de entrada cruda
 noecho(); // Desactiva el eco de teclas
 keypad(stdscr, TRUE); // Habilitar teclas especiales
 timeout(1); // Configura tiempo de espera para getch()
+// Crear ventana para mostrar las instrucciones
+int rows, cols;
+getmaxyx(stdscr, rows, cols); // Obtener dimensiones de la pantalla
+WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2); // Ventana centrada
+box(sec_window, 0, 0); // Dibujar borde alrededor de la ventana
+// Instrucciones en la ventana
+mvwprintw(sec_window, 1, 2, "Secuencia: Escalera");
+mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+wrefresh(sec_window); // Actualizar la ventana
 while ((ch = getch()) != KEY_F(2)) { // Salir con F2
 // Ajustar velocidad con las flechas
 if (ch == KEY_UP) {
-*velocidad = (*velocidad > 100) ? *velocidad - 50 : *velocidad;
+*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
 } else if (ch == KEY_DOWN) {
-*velocidad = (*velocidad < 2000) ? *velocidad + 50 : *velocidad;
+*velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
 }
-// Secuencia en bucle
-while (luz1_pos < 8) {
-// Apagar todos los LEDs
-for (int i = 0; i < 8; i++) {
-leds[i] = 0;
+// Inicializar LEDs apagados
+for (i = 0; i < 8; i++) leds[i] = 0;
+// Comenzar la secuencia de apilado (de izquierda a derecha)
+for (i = 0; i < 8; i++) { // Iniciar desde el LED más a la izquierda
+if ((ch = getch()) == KEY_F(2)) {
+for (int k = 0; k < 8; k++) leds[k] = 0;
+interfaz(leds); // Actualizar LEDs
+return; // Salir inmediatamente
+} else if (ch == KEY_UP) {
+*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+raw(); // Configuración de entrada cruda
+noecho(); // Desactiva el eco de teclas
+keypad(stdscr, TRUE); // Habilitar teclas especiales
+timeout(1); // Configura tiempo de espera para getch()
+// Crear ventana para mostrar las instrucciones
+int rows, cols;
+getmaxyx(stdscr, rows, cols); // Obtener dimensiones de la pantalla
+WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2); // Ventana centrada
+box(sec_window, 0, 0); // Dibujar borde alrededor de la ventana
+// Instrucciones en la ventana
+mvwprintw(sec_window, 1, 2, "Secuencia: Escalera");
+mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
+mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
+mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
+wrefresh(sec_window); // Actualizar la ventana
+while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+// Ajustar velocidad con las flechas
+if (ch == KEY_UP) {
+*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+} else if (ch == KEY_DOWN) {
+*velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
 }
-// Avanzar la Luz 1
-if (luz1_pos < 8) {
-leds[luz1_pos] = 1;
-luz1_pos++;
-}
-// Activar la Luz 2 cuando Luz 1 llegue a la mitad
-if (luz1_pos >= 4 && luz2_pos == -1) { // Cuando Luz 1 llega a la mitad
-luz2_pos = 4; // Luz 2 comienza en la mitad
-}
-// Avanzar la Luz 2 si está activa
-if (luz2_pos >= 0 && luz2_pos < 8) {
-leds[luz2_pos] = 1;
-luz2_pos++;
-}
-interfaz(leds); // Actualizar los LEDs
-gpioDelay(*velocidad); // Esperar un momento
-// Luz 2 avanza a la mitad del tiempo de Luz 1
-if (luz2_pos < 8) {
-gpioDelay(*velocidad / 2); // Luz 2 se mueve más rápido
-}
-}
-}
-// Apagar todos los LEDs al salir de la secuencia
-for (int i = 0; i < 8; i++) {
-leds[i] = 0;
-}
-interfaz(leds);
-gpioTerminate(); // Terminar la sesión de GPIO
-refresh(); // Actualizar la interfaz
-endwin(); // Cerrar la ventana ncurses
-}
-// Secuencia "Escalera"
+// Inicializar LEDs apagados
+for (i = 0; i < 8; i++) leds[i] = 0;
+// Comenzar la secuencia de apilado (de izquierda a derecha)
+for (i = 0; i < 8; i++) { // Iniciar desde el LED más a la izquierda
+if ((ch = getch()) == KEY_F(2)) {
+for (int k = 0; k < 8; k++) leds[k] = 0;
+interfaz(leds); // Actualizar LEDs
+return; // Salir inmediatamente
+} else if (ch == KEY_UP) {
+*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
 void secuencia_escalera(int *velocidad) {
 int leds[8] = {0};
 int ch;
@@ -421,74 +448,6 @@ interfaz(leds); // Actualizar la interfaz
 gpioDelay(*velocidad); // Esperar medio segundo
 if ((ch = getch()) == KEY_F(2)) {
 for (int k = 0; k < 8; k++) leds[k] = 0;
-interfaz(leds); // Actualizar LEDs
-return; // Salir inmediatamente
-} else if (ch == KEY_UP) {
-*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
-} else if (ch == KEY_DOWN) {
-*velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
-}
-wclear(sec_window); // Limpiar la ventana antes de actualizarla
-box(sec_window, 0, 0); // Redibujar el borde de la ventana
-mvwprintw(sec_window, 1, 2, "Secuencia: Escalera");
-mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
-mvwprintw(sec_window, 3, 2, "Usa las flechas para Cambiar velocidad");
-mvwprintw(sec_window, 4, 2, "Presiona F2 para Volver al menu");
-wrefresh(sec_window); // Actualizar la ventana
-}
-}
-}
-// Apagar todos los LEDs al salir de la secuencia
-for (i = 0; i < 8; i++) leds[i] = 0;
-interfaz(leds);
-// Finalizar
-gpioTerminate();
-wrefresh(sec_window); // Actualizar la ventana
-endwin(); // Cerrar la ventana ncurses
-}
-void secuencia_espiral(int *velocidad) {
-// Tabla de datos para la secuencia en espiral
-int tabla_espiral[16][8] = {
-{1, 0, 0, 0, 0, 0, 0, 1}, // Paso 1
-{1, 1, 0, 0, 0, 0, 1, 1}, // Paso 2
-{1, 1, 1, 0, 0, 1, 1, 1}, // Paso 3
-{1, 1, 1, 1, 1, 1, 1, 1}, // Paso 4 (completo)
-{0, 1, 1, 1, 1, 1, 1, 0}, // Paso 5
-{0, 0, 1, 1, 1, 1, 0, 0}, // Paso 6
-{0, 0, 0, 1, 1, 0, 0, 0}, // Paso 7
-{0, 0, 0, 0, 0, 0, 0, 0}, // Paso 8 (apagar todo)
-{0, 0, 0, 1, 1, 0, 0, 0}, // Paso 9 (espiral inversa)
-{0, 0, 1, 1, 1, 1, 0, 0}, // Paso 10
-{0, 1, 1, 1, 1, 1, 1, 0}, // Paso 11
-{1, 1, 1, 1, 1, 1, 1, 1}, // Paso 12 (completo de nuevo)
-{1, 1, 1, 0, 0, 1, 1, 1}, // Paso 13
-{1, 1, 0, 0, 0, 0, 1, 1}, // Paso 14
-{1, 0, 0, 0, 0, 0, 0, 1}, // Paso 15
-{0, 0, 0, 0, 0, 0, 0, 0}, // Paso 16 (apagar todo)
-};
-int ch;
-int rows, cols;
-gpioInitialise();
-initscr();
-raw();
-noecho();
-keypad(stdscr, TRUE);
-timeout(1);
-// Crear ventana para mostrar información
-getmaxyx(stdscr, rows, cols);
-WINDOW *sec_window = newwin(6, 40, (rows - 6) / 2, (cols - 40) / 2);
-box(sec_window, 0, 0);
-mvwprintw(sec_window, 1, 2, "Secuencia: Espiral");
-mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
-mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
-mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
-wrefresh(sec_window);
-while ((ch = getch()) != KEY_F(2)) { // Salir con F2
-if (ch == KEY_UP) {
-*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
-} else if (ch == KEY_DOWN) {
-*velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
-}
 for (int i = 0; i < 16; i++) {
 interfaz(tabla_espiral[i]); // Actualizar LEDs según la tabla
 gpioDelay(*velocidad); // Esperar según la velocidad configurada
