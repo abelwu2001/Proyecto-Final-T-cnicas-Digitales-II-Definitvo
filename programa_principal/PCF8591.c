@@ -1,13 +1,10 @@
-
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
-#include <ncurses.h> 
+#include <ncurses.h> /* libncurses5-dev */
 #include <pigpio.h>
-
-/* libncurses5-dev */
 
 /*
 PCF8591PG.c
