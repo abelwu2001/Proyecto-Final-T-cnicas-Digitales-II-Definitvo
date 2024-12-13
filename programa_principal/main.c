@@ -9,6 +9,7 @@
 #define PCF8591_I2C_ADDR 0x48  // Dirección I2C del PCF8591
 #define CLAVE_CORRECTA "12345" // Contraseña correcta
 #define MAX_INTENTOS 3       // Número máximo de intentos
+extern int comparar_contrasena(const char *entrada, const char *correcta); //Funcion ensambladora
 
 // Variable global para manejar el dispositivo I2C
 int i2cHandle;
@@ -66,8 +67,8 @@ int pedir_password() {
         }
         refresh();  // Actualizar la pantalla
 
-        // Compara la contraseña ingresada con la correcta
-        if (strcmp(password, CLAVE_CORRECTA) == 0) {
+        // Comparar la contraseña ingresada con la correcta usando la función en ensamblador
+        if (comparar_contrasena(password, CLAVE_CORRECTA) == 1) {
             mvprintw(2, 0, "Bienvenido al Sistema\n");
             refresh();
             usleep(1000000);  // Pausar por 1 segundo
@@ -84,7 +85,6 @@ int pedir_password() {
     endwin();  // Termina ncurses
     return 0;  // Contraseña incorrecta
 }
-
 
 void menu_principal() {
     const char *opciones[] = {
