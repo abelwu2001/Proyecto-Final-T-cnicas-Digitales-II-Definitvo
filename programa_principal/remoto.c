@@ -10,8 +10,20 @@
 extern int velocidad; // Velocidad inicial, compartida con el programa principal
 
 // Función para configurar el UART
+
 int configurar_uart() {
-    int fd = open("/dev/serial0", O_RDWR | O_NOCTTY);
+    char dispositivo[256];
+    int fd;
+
+    // Solicitar al usuario el dispositivo si no se proporciona un valor predeterminado
+    printf("Ingrese el dispositivo UART (por defecto: /dev/serial0): ");
+    if (fgets(dispositivo, sizeof(dispositivo), stdin) == NULL || dispositivo[0] == '\n') {
+        strcpy(dispositivo, "/dev/serial0"); // Valor predeterminado
+    } else {
+        dispositivo[strcspn(dispositivo, "\n")] = '\0'; // Remover el salto de línea
+    }
+
+    fd = open(dispositivo, O_RDWR | O_NOCTTY);
     if (fd == -1) {
         perror("Error al abrir UART");
         return -1;
@@ -24,8 +36,12 @@ int configurar_uart() {
     options.c_cflag |= (CLOCAL | CREAD);
     tcsetattr(fd, TCSANOW, &options);
 
+    printf("UART configurado en: %s\n", dispositivo);
+
     return fd;
 }
+
+
 
 // Función para modo esclavo
 void modo_esclavo() {

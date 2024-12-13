@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <pigpio.h>
 #include "secuencias.h"  // Incluir las funciones de secuencias
-
+#include "remoto.h" // Incluir los prototipos de las funciones remoto
 #define PCF8591_I2C_ADDR 0x48  // Dirección I2C del PCF8591
 #define CLAVE_CORRECTA "12345" // Contraseña correcta
 #define MAX_INTENTOS 3       // Número máximo de intentos
@@ -188,14 +188,38 @@ int seleccionar_modo() {
 
         ch = getch();
         if (ch == '1') {
+            endwin();
             return 0; // Modo local
         } else if (ch == '2') {
-            return 1; // Modo remoto
+            clear();
+            mvprintw(0, 0, "Seleccione el tipo de modo remoto:");
+            mvprintw(1, 0, "1. Modo Maestro");
+            mvprintw(2, 0, "2. Modo Esclavo");
+            mvprintw(3, 0, "Presione 'q' para regresar.");
+            refresh();
+
+            while (1) {
+                ch = getch();
+                if (ch == '1') {
+                    endwin();
+                    modo_maestro(); // Llamar a la función de modo maestro
+                    return 1; // Modo remoto - maestro
+                } else if (ch == '2') {
+                    endwin();
+                    modo_esclavo(); // Llamar a la función de modo esclavo
+                    return 2; // Modo remoto - esclavo
+                } else if (ch == 'q') {
+                    break; // Salir al menú anterior
+                }
+            }
         }
     }
 
     endwin();
+    return -1; // Valor por defecto si no se selecciona nada
 }
+
+
 
 int definir_velocidad_inicial(int *velocidad) {
     int ch;
