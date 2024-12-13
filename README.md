@@ -1,10 +1,10 @@
 # Proyecto Final Digitales II
 
-**Versión 1.0.1**
+**Versión 1.2.1**
 
-- Esta hecho el del ARM que simplemente compara la cadena de la contrasenia "12345" y tira 1 que verdadero y -1 que es falso
 - Falta lo del ADC (igual que 1.0.1.3).
-- Falta lo de conexión Local/Remoto (igual que 1.0.1.3).
+- Intentos de hacer Puerto Serie con un Uart-usb Ch340g 8n1
+- Chill de cojones
 
 ## SE DEBEN CUMPLIR LAS SIGUIENTES COSAS:
 
