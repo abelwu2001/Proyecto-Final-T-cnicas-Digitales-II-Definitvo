@@ -403,12 +403,13 @@ int main() {
     inicializar_adc();
 
     if (!pedir_password()) {
-        printf("Contrase\u00f1a incorrecta. Saliendo...\n");
+        printf("Contraseña incorrecta. Saliendo...\n");
         return 1;
     }
 
+    printf("Bienvenido al sistema de control de secuencias.\n");
     menu_principal();
 
+    printf("Saliendo del programa...\n");
     return 0;
 }
-
