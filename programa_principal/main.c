@@ -199,6 +199,9 @@ int seleccionar_modo() {
 
 int definir_velocidad_inicial(int *velocidad) {
     int ch;
+    char entrada[10]; // Para almacenar la entrada del usuario como cadena
+    int temp_velocidad;
+
     initscr();
     cbreak();
     noecho();
@@ -215,11 +218,35 @@ int definir_velocidad_inicial(int *velocidad) {
         ch = getch();
         if (ch == '1') {
             *velocidad = leer_adc(0) * 1000; // Velocidad basada en ADC
+            clear();
+            mvprintw(0, 0, "Velocidad inicial configurada desde ADC: %d us", *velocidad);
+            refresh();
+            usleep(1500000); // Mostrar mensaje durante 1.5 segundos
             return 1;
         } else if (ch == '2') {
             echo();
-            mvprintw(3, 0, "Ingrese la velocidad inicial (us): ");
-            scanw("%d", velocidad);
+            clear();
+            mvprintw(0, 0, "Ingrese la velocidad inicial en microsegundos (us): ");
+            refresh();
+
+            while (1) {
+                memset(entrada, 0, sizeof(entrada)); // Limpiar la entrada
+                getstr(entrada); // Leer la entrada como cadena
+                temp_velocidad = atoi(entrada); // Convertir la entrada a entero
+
+                if (temp_velocidad > 0) { // Validar que sea un número positivo
+                    *velocidad = temp_velocidad;
+                    mvprintw(2, 0, "Velocidad inicial configurada: %d us", *velocidad);
+                    refresh();
+                    usleep(1500000); // Mostrar mensaje durante 1.5 segundos
+                    break;
+                } else {
+                    mvprintw(1, 0, "Entrada no valida. Intente nuevamente: ");
+                    clrtoeol(); // Limpiar la línea
+                    refresh();
+                }
+            }
+
             noecho();
             return 2;
         }
@@ -227,6 +254,8 @@ int definir_velocidad_inicial(int *velocidad) {
 
     endwin();
 }
+
+
 
 void iniciar_secuencias(int velocidad) {
     const char *opciones[] = {
@@ -242,6 +271,7 @@ void iniciar_secuencias(int velocidad) {
     };
     int seleccion = 0;
     int ch;
+    int adc_velocidad = leer_adc(0) * 1000; // Valor tomado del ADC
 
     initscr();
     cbreak();
@@ -254,8 +284,8 @@ void iniciar_secuencias(int velocidad) {
     // Calcular dimensiones de la ventana
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
-    int ventana_height = 12;
-    int ventana_width = 40;
+    int ventana_height = 14;
+    int ventana_width = 50;
     int starty = (rows - ventana_height) / 2;
     int startx = (cols - ventana_width) / 2;
 
@@ -269,14 +299,18 @@ void iniciar_secuencias(int velocidad) {
         box(menu_win, 0, 0); // Redibujar el borde
         mvwprintw(menu_win, 0, (ventana_width - 20) / 2, "Menu de Secuencias");
 
+        // Mostrar velocidades actuales
+        mvwprintw(menu_win, 1, 2, "Velocidad inicial configurada: %d us", velocidad);
+        mvwprintw(menu_win, 2, 2, "Velocidad tomada del ADC: %d us", adc_velocidad);
+
         // Mostrar las opciones del menú
         for (int i = 0; i < 9; i++) {
             if (i == seleccion) {
                 wattron(menu_win, A_REVERSE); // Resaltar la opción seleccionada
-                mvwprintw(menu_win, i + 2, 2, "%s", opciones[i]);
+                mvwprintw(menu_win, i + 4, 2, "%s", opciones[i]);
                 wattroff(menu_win, A_REVERSE);
             } else {
-                mvwprintw(menu_win, i + 2, 2, "%s", opciones[i]);
+                mvwprintw(menu_win, i + 4, 2, "%s", opciones[i]);
             }
         }
 
