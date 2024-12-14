@@ -40,7 +40,7 @@ void inicializar_adc() {
 }
 
 int leer_adc(int canal) {
-    i2cWriteByte(i2cHandle, 0x40 | (canal & 0x03));  // Seleccionar canal
+    i2cWriteByte(i2cHandle, 0x40 | (canal & 0x02));  // Seleccionar canal
     usleep(1000);  // Esperar un poco para la conversión
     return i2cReadByte(i2cHandle);  // Leer el valor ADC
 }
@@ -223,7 +223,7 @@ int seleccionar_modo() {
 
 int definir_velocidad_inicial(int *velocidad) {
     int ch;
-    char entrada[10]; // Para almacenar la entrada del usuario como cadena
+    char entrada[16]; // Para almacenar la entrada del usuario como cadena
     int temp_velocidad;
 
     initscr();
@@ -241,13 +241,20 @@ int definir_velocidad_inicial(int *velocidad) {
 
         ch = getch();
         if (ch == '1') {
-            *velocidad = leer_adc(0) * 1000; // Velocidad basada en ADC
-            clear();
-            mvprintw(0, 0, "Velocidad inicial configurada desde ADC: %d us", *velocidad);
-            refresh();
-            usleep(1500000); // Mostrar mensaje durante 1.5 segundos
-            return 1;
-        } else if (ch == '2') {
+    int valor_adc_crudo = leer_adc(0); // Leer el valor crudo del ADC
+    int voltaje_mV = (valor_adc_crudo * 3300) / 255; // Convertir a milivoltios (asumiendo 3.3V como referencia)
+    *velocidad = valor_adc_crudo * 1000; // Velocidad basada en ADC
+    clear();
+    mvprintw(0, 0, "Velocidad inicial configurada desde ADC: %d us", *velocidad);
+    mvprintw(1, 0, "Valor crudo del ADC: %d (equivale a %d mV)", valor_adc_crudo, voltaje_mV); // Mostrar en mV
+    refresh();
+    usleep(1500000); // Mostrar mensaje durante 1.5 segundos
+    return 1;
+
+ 
+
+
+    } else if (ch == '2') {
             echo();
             clear();
             mvprintw(0, 0, "Ingrese la velocidad inicial en microsegundos (us): ");
