@@ -11,6 +11,8 @@
 #define MAX_INTENTOS 3       // Número máximo de intentos
 extern int comparar_contrasena(const char *entrada, const char *correcta); //Funcion ensambladora
 
+//cambios importantes del adc hechos
+
 // Variable global para manejar el dispositivo I2C
 int i2cHandle;
 
