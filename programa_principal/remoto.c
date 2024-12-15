@@ -10,20 +10,8 @@
 extern int velocidad; // Velocidad inicial, compartida con el programa principal
 
 // Función para configurar el UART
-
-int configurar_uart() {
-    char dispositivo[256];
-    int fd;
-
-    // Solicitar al usuario el dispositivo si no se proporciona un valor predeterminado
-    printf("Ingrese el dispositivo UART (por defecto: /dev/serial0): ");
-    if (fgets(dispositivo, sizeof(dispositivo), stdin) == NULL || dispositivo[0] == '\n') {
-        strcpy(dispositivo, "/dev/serial0"); // Valor predeterminado
-    } else {
-        dispositivo[strcspn(dispositivo, "\n")] = '\0'; // Remover el salto de línea
-    }
-
-    fd = open(dispositivo, O_RDWR | O_NOCTTY);
+int configurar_uart(const char *dispositivo) {
+    int fd = open(dispositivo, O_RDWR | O_NOCTTY);
     if (fd == -1) {
         perror("Error al abrir UART");
         return -1;
@@ -31,25 +19,31 @@ int configurar_uart() {
 
     struct termios options;
     tcgetattr(fd, &options);
-    cfsetispeed(&options, B9600);
-    cfsetospeed(&options, B9600);
-    options.c_cflag |= (CLOCAL | CREAD);
+    cfsetispeed(&options, B9600); // Velocidad de entrada
+    cfsetospeed(&options, B9600); // Velocidad de salida
+    options.c_cflag |= (CLOCAL | CREAD); // Habilitar lectura y mantener conexión activa
+    options.c_cflag &= ~CSIZE; // Limpiar tamaño de los bits
+    options.c_cflag |= CS8;    // 8 bits por palabra
+    options.c_cflag &= ~PARENB; // Sin paridad
+    options.c_cflag &= ~CSTOPB; // 1 bit de parada
+    options.c_cflag &= ~CRTSCTS; // Sin control de hardware
+    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // Modo sin buffer
+    options.c_iflag &= ~(IXON | IXOFF | IXANY); // Sin control de flujo
+    options.c_oflag &= ~OPOST; // Salida sin procesamiento
     tcsetattr(fd, TCSANOW, &options);
 
     printf("UART configurado en: %s\n", dispositivo);
-
     return fd;
 }
 
-
-
 // Función para modo esclavo
 void modo_esclavo() {
-    int fd = configurar_uart();
+    const char *dispositivo = "/dev/serial0"; // Por defecto usa serial0
+    int fd = configurar_uart(dispositivo);
     if (fd == -1) return;
 
     char comando[16];
-    printf("Modo esclavo: esperando comandos...\n");
+    printf("Modo esclavo: esperando comandos en %s...\n", dispositivo);
 
     while (1) {
         memset(comando, 0, sizeof(comando));
@@ -76,7 +70,9 @@ void modo_esclavo() {
 
 // Función para modo maestro
 void modo_maestro() {
-    int fd = configurar_uart();
+
+    const char *dispositivo = "/dev/ttyUSB0"; // Por defecto usa ttyUSB0
+    int fd = configurar_uart(dispositivo);
     if (fd == -1) return;
 
     const char *secuencias[] = {"AUTO", "CHOQUE", "APILADA", "CARRERA", "ESCALERA", "CHISPAS", "SIRENA", "MATRIX"};
@@ -91,7 +87,7 @@ void modo_maestro() {
 
     while (1) {
         clear();
-        mvprintw(0, 0, "Modo Maestro: Control de Secuencias");
+        mvprintw(0, 0, "Modo Maestro: Control de Secuencias (%s)", dispositivo);
         for (int i = 0; i < 8; i++) {
             if (i == seleccion) {
                 attron(A_REVERSE);
@@ -128,4 +124,5 @@ void modo_maestro() {
     close(fd);
     endwin();
 }
+
 
