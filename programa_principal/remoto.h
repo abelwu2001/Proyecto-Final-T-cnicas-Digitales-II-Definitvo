@@ -10,5 +10,9 @@ void modo_esclavo();
 // Modo maestro: selecciona y envía secuencias al esclavo
 void modo_maestro();
 
+void inicializar_adc();
+
+void leer_adc();
+
 #endif // REMOTO_H
 
