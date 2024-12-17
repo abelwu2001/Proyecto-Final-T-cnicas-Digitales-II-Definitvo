@@ -1,10 +1,9 @@
 # Proyecto Final Digitales II
 
-**Versión 1.2.1**
-
-- Esta hecho el ADC completo 
-- Intentos de hacer Puerto Serie con un Uart-usb Ch340g 8n1
-- Chill de cojones
+**Versión 1.4.0**
+- Se prodece a finalizar el tema de los puertos /dev/ttyUSB0 o /dev/serial0 como posibles para controlar
+- 8N1
+- Cambios importantes en la estructura de remoto. Se enviara cadena de la siguiente forma "[SECUENCIA]:[Valor manual de la velocidad]" o con valores del ADC local (en modo esclavo) "[SECUENCIA]:(sin nada adentro)"
 
 ## SE DEBEN CUMPLIR LAS SIGUIENTES COSAS:
 
