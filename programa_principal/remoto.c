@@ -121,13 +121,17 @@ void modo_esclavo() {
 void modo_maestro() {
     const char *dispositivo = "/dev/ttyUSB0";
     int fd = configurar_uart(dispositivo);
-    if (fd == -1) return;
+    if (fd == -1) {
+        printf("Error: No se pudo abrir el UART.\n");
+        return;
+    }
 
     const char *secuencias[] = {
-        "AUTO", "CHOQUE", "APILADA", "CARRERA", 
+        "AUTO", "CHOQUE", "APILADA", "CARRERA",
         "ESCALERA", "CHISPAS", "SIRENA", "MATRIX"
     };
-    int seleccion = 0, modo_velocidad = 0, velocidad_manual;
+
+    int seleccion = 0, modo_velocidad = 0, velocidad_manual = 0;
     char comando[32];
     int ch;
 
@@ -141,15 +145,18 @@ void modo_maestro() {
     while (1) {
         clear();
         mvprintw(0, 0, "Modo Maestro: Seleccione el modo de velocidad");
-        mvprintw(1, 0, "1. Manual (escriba la velocidad)");
-        mvprintw(2, 0, "2. ADC (velocidad predeterminada en el esclavo)");
+        mvprintw(1, 0, "1. Manual (ingresar velocidad)");
+        mvprintw(2, 0, "2. ADC (valor predeterminado en esclavo)");
         refresh();
 
         ch = getch();
-        if (ch == '1') modo_velocidad = 1;  // Manual
-        else if (ch == '2') modo_velocidad = 2;  // ADC
-        else continue;
-        break;
+        if (ch == '1') {
+            modo_velocidad = 1;  // Manual
+            break;
+        } else if (ch == '2') {
+            modo_velocidad = 2;  // ADC
+            break;
+        }
     }
 
     // Menú para seleccionar las secuencias
@@ -208,3 +215,4 @@ void modo_maestro() {
     close(fd);
     endwin();
 }
+

@@ -204,11 +204,11 @@ int seleccionar_modo() {
                 ch = getch();
                 if (ch == '1') {
                     endwin();
-                    modo_maestro(); // Llamar a la función de modo maestro
+                    modo_maestro(); // Llamar correctamente a modo_maestro
                     return 1; // Modo remoto - maestro
                 } else if (ch == '2') {
                     endwin();
-                    modo_esclavo(); // Llamar a la función de modo esclavo
+                    modo_esclavo(); // Llamar correctamente a modo_esclavo
                     return 2; // Modo remoto - esclavo
                 } else if (ch == 'q') {
                     break; // Salir al menú anterior
@@ -220,7 +220,6 @@ int seleccionar_modo() {
     endwin();
     return -1; // Valor por defecto si no se selecciona nada
 }
-
 
 
 int definir_velocidad_inicial(int *velocidad) {
