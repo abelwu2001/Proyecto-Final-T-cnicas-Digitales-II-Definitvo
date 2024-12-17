@@ -6,6 +6,7 @@
 #include <ncurses.h>
 #include "remoto.h"
 #include "secuencias.h"
+#include <stdlib.h>
 
 extern int velocidad; // Velocidad inicial, compartida con el programa principal
 
@@ -18,7 +19,7 @@ extern int velocidad; // Velocidad inicial, compartida con el programa principal
 int i2cHandle;
 
 // Inicializar ADC
-void inicializar_adc() {
+void inicializar_adc1() {
     gpioInitialise();
     i2cHandle = i2cOpen(1, PCF8591_I2C_ADDR, 0);
     if (i2cHandle < 0) {
@@ -28,7 +29,7 @@ void inicializar_adc() {
 }
 
 // Leer ADC
-int leer_adc() {
+int leer_adc1() {
     i2cWriteByte(i2cHandle, 0x40);  // Leer canal 0
     usleep(1000);
     return i2cReadByte(i2cHandle) * 1000;  // Convertir ADC a microsegundos
@@ -70,7 +71,7 @@ void modo_esclavo() {
     int fd = configurar_uart(dispositivo); // Configuración UART
     if (fd == -1) return;
 
-    inicializar_adc(); // Inicializar el ADC
+    inicializar_adc1(); // Inicializar el ADC
 
     char comando[32]; // Buffer para recibir el comando
     char secuencia[16];
@@ -89,7 +90,7 @@ void modo_esclavo() {
             if (sscanf(comando, "%15[^:]:%d", secuencia, &velocidad) == 2) {
                 printf("Secuencia: %s, Velocidad: %d us\n", secuencia, velocidad);
             } else if (sscanf(comando, "%15[^:]:", secuencia) == 1) {
-                velocidad = leer_adc(); // Leer velocidad desde el ADC
+                velocidad = leer_adc1(); // Leer velocidad desde el ADC
                 printf("Secuencia: %s, Velocidad (ADC): %d us\n", secuencia, velocidad);
             } else {
                 printf("Formato de comando inválido: %s\n", comando);

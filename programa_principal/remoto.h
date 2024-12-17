@@ -1,6 +1,6 @@
 #ifndef REMOTO_H
 #define REMOTO_H
-
+extern int i2cHandle;
 // Configura el UART para la comunicación serie
 int configurar_uart();
 
@@ -10,9 +10,9 @@ void modo_esclavo();
 // Modo maestro: selecciona y envía secuencias al esclavo
 void modo_maestro();
 
-void inicializar_adc();
+void inicializar_adc1();
 
-void leer_adc();
+int leer_adc1();
 
 #endif // REMOTO_H
 

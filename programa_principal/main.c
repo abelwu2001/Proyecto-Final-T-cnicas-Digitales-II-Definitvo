@@ -14,7 +14,7 @@ extern int comparar_contrasena(const char *entrada, const char *correcta); //Fun
 //cambios importantes del adc hechos
 
 // Variable global para manejar el dispositivo I2C
-int i2cHandle;
+//int i2cHandle;
 
 // Variable global para el modo
 int modo_actual = 0; // 0 para local, 1 para remoto
