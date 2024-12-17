@@ -170,65 +170,56 @@ void menu_principal() {
     endwin();
 }
 
-
 int seleccionar_modo() {
-    int seleccion = 0;
+    int opcion = 0;
     int ch;
-
-    initscr();
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-    curs_set(0);
 
     while (1) {
         clear();
         mvprintw(0, 0, "Seleccione el modo de trabajo:");
         mvprintw(1, 0, "1. Modo Local (Predeterminado)");
         mvprintw(2, 0, "2. Modo Remoto");
+        mvprintw(3, 0, "Presione 'q' para regresar al menú principal.");
         refresh();
 
         ch = getch();
         if (ch == '1') {
-            endwin();
-            return 0; // Modo local
+            return 0; // Modo Local
         } else if (ch == '2') {
             clear();
             mvprintw(0, 0, "Seleccione el tipo de modo remoto:");
             mvprintw(1, 0, "1. Modo Maestro");
             mvprintw(2, 0, "2. Modo Esclavo");
-            mvprintw(3, 0, "Presione 'q' para regresar.");
             refresh();
 
             while (1) {
                 ch = getch();
                 if (ch == '1') {
-                    endwin();
-                    modo_maestro(); // Llamar a la función de modo maestro
-                    return 1; // Modo remoto - maestro
+                    endwin();  // Cerrar ncurses correctamente
+                    modo_maestro(); // Llamar al modo maestro
+                    exit(0);  // Salir del menú principal por completo
                 } else if (ch == '2') {
-                    endwin();
-                    modo_esclavo(); // Llamar a la función de modo esclavo
-                    return 2; // Modo remoto - esclavo
+                    endwin();  // Cerrar ncurses correctamente
+                    modo_esclavo(); // Llamar al modo esclavo
+                    exit(0);  // Salir del menú principal por completo
                 } else if (ch == 'q') {
-                    break; // Salir al menú anterior
+                    return -1; // Volver al menú principal
                 }
             }
+        } else if (ch == 'q') {
+            return -1; // Volver al menú principal
         }
     }
-
-    endwin();
-    return -1; // Valor por defecto si no se selecciona nada
 }
 
 
 
-int definir_velocidad_inicial(int *velocidad) {
-    int ch;
-    char entrada[16]; // Para almacenar la entrada del usuario como cadena
-    int temp_velocidad;
+int definir_velocidad_inicial(int *velocidad_inicial) {
+    int opcion;
+    char entrada_manual[16]; // Almacenar entrada del usuario
+    int nueva_velocidad;
 
-    initscr();
+    initscr();          // Inicializar ncurses
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
@@ -236,57 +227,66 @@ int definir_velocidad_inicial(int *velocidad) {
 
     while (1) {
         clear();
-        mvprintw(0, 0, "Definir velocidad inicial:");
+        mvprintw(0, 0, "Configuracion de Velocidad Inicial (Local):");
         mvprintw(1, 0, "1. Usar datos del ADC");
         mvprintw(2, 0, "2. Introducir valor manualmente");
+        mvprintw(3, 0, "Presione 'q' para regresar.");
         refresh();
 
-        ch = getch();
-        if (ch == '1') {
-    int valor_adc_crudo = leer_adc(0); // Leer el valor crudo del ADC
-    int voltaje_mV = (valor_adc_crudo * 3300) / 255; // Convertir a milivoltios (asumiendo 3.3V como referencia)
-    *velocidad = valor_adc_crudo * 1000; // Velocidad basada en ADC
-    clear();
-    mvprintw(0, 0, "Velocidad inicial configurada desde ADC: %d us", *velocidad);
-    mvprintw(1, 0, "Valor crudo del ADC: %d (equivale a %d mV)", valor_adc_crudo, voltaje_mV); // Mostrar en mV
-    refresh();
-    usleep(1500000); // Mostrar mensaje durante 1.5 segundos
-    return 1;
+        opcion = getch();
+        if (opcion == '1') {  
+            int valor_adc_crudo = leer_adc(0);
+            int voltaje_mV = (valor_adc_crudo * 3300) / 255;  // Convertir a mV
+            *velocidad_inicial = valor_adc_crudo * 1000;
 
- 
-
-
-    } else if (ch == '2') {
-            echo();
             clear();
-            mvprintw(0, 0, "Ingrese la velocidad inicial en microsegundos (us): ");
+            mvprintw(0, 0, "Velocidad configurada desde ADC: %d us", *velocidad_inicial);
+            mvprintw(1, 0, "Valor crudo ADC: %d (equivale a %d mV)", valor_adc_crudo, voltaje_mV);
+            refresh();
+            usleep(1500000);
+            break;
+
+        } else if (opcion == '2') {  
+            echo();  // Permite ver la entrada del usuario
+            clear();
+            mvprintw(0, 0, "Introduzca la velocidad inicial en microsegundos (us): ");
             refresh();
 
             while (1) {
-                memset(entrada, 0, sizeof(entrada)); // Limpiar la entrada
-                getstr(entrada); // Leer la entrada como cadena
-                temp_velocidad = atoi(entrada); // Convertir la entrada a entero
+                memset(entrada_manual, 0, sizeof(entrada_manual));
+                getstr(entrada_manual);  // Leer entrada manual
+                nueva_velocidad = atoi(entrada_manual);  // Convertir a entero
 
-                if (temp_velocidad > 0) { // Validar que sea un número positivo
-                    *velocidad = temp_velocidad;
-                    mvprintw(2, 0, "Velocidad inicial configurada: %d us", *velocidad);
+                if (nueva_velocidad > 0) {
+                    *velocidad_inicial = nueva_velocidad;
+                    mvprintw(2, 0, "Velocidad inicial configurada manualmente: %d us", *velocidad_inicial);
                     refresh();
-                    usleep(1500000); // Mostrar mensaje durante 1.5 segundos
+                    usleep(1500000);
                     break;
                 } else {
                     mvprintw(1, 0, "Entrada no valida. Intente nuevamente: ");
-                    clrtoeol(); // Limpiar la línea
+                    clrtoeol();  // Limpiar la línea actual
                     refresh();
                 }
             }
+            noecho();  // Desactiva la visualización de entrada
+            break;
 
-            noecho();
-            return 2;
+        } else if (opcion == 'q') {  
+            clear();
+            mvprintw(0, 0, "Regresando al menu principal...");
+            refresh();
+            usleep(1000000);
+            break;
         }
     }
 
-    endwin();
+    endwin();  // Finalizar ncurses correctamente
+    return 0;
 }
+
+
+
 
 
 
