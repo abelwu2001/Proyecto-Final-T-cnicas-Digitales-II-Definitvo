@@ -38,7 +38,7 @@ int configurar_uart(const char *dispositivo) {
 
 // Función para modo esclavo
 void modo_esclavo() {
-    const char *dispositivo = "/dev/serial0"; // Por defecto usa serial0
+    const char *dispositivo = "/dev/ttyUSB0"; // Por defecto usa serial0
     int fd = configurar_uart(dispositivo);
     if (fd == -1) return;
 
@@ -91,7 +91,7 @@ void modo_esclavo() {
 
 // Menú simple para modo maestro
 void modo_maestro() {
-    const char *dispositivo = "/dev/serial0"; // Ajusta según el puerto correcto
+    const char *dispositivo = "/dev/ttyS0";// Ajusta según el puerto correcto
     int fd = configurar_uart(dispositivo);
     if (fd == -1) return;
 
