@@ -4,12 +4,12 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <ncurses.h>
+#include <stdlib.h>
 #include "remoto.h"
 #include "secuencias.h"
-#include  <stdlib.h>
-extern int velocidad; // Velocidad inicial, compartida con el programa principal
 
-void key_event(int key);
+extern int velocidad; // Velocidad inicial, compartida con el programa principal
+extern int leer_adc(int canal); // Función para leer el ADC en modo esclavo
 
 // Configura el UART para la comunicación serie
 int configurar_uart(const char *dispositivo) {
@@ -38,98 +38,59 @@ int configurar_uart(const char *dispositivo) {
     return fd;
 }
 
-void key_event(int key) {
-    MEVENT event;
-    memset(&event, 0, sizeof(event));
-    event.bstate = key;
-}
-
 // Función para modo esclavo
 void modo_esclavo() {
-    const char *dispositivo = "/dev/ttyUSB0"; // Ajustar al puerto UART correcto
+    const char *dispositivo = "/dev/ttyUSB0"; // Por defecto usa USB0
     int fd = configurar_uart(dispositivo);
-    if (fd == -1) return; // Si no se abre el UART, salir
+    if (fd == -1) return;
 
     char comando[32];
     int velocidad_actual = leer_adc(0) * 1000; // Usar velocidad del ADC por defecto
-    int ejecutando_secuencia = 0;
-    char secuencia_actual[16] = "";
+    int ejecutando = 1; // Variable de control para detener la secuencia
 
-    printf("Modo esclavo activo en %s. Esperando comandos del Maestro...\n", dispositivo);
-    printf("Escriba 'SALIR' en el Maestro para salir del modo esclavo.\n");
+    printf("Modo esclavo: esperando comandos en %s...\n", dispositivo);
+    printf("Escriba 'SALIR' para cerrar el modo esclavo.\n");
 
-    while (1) {
-        memset(comando, 0, sizeof(comando)); // Limpiar el buffer de comandos
+    while (ejecutando) {
+        memset(comando, 0, sizeof(comando)); // Limpiar el buffer
         int bytes_leidos = read(fd, comando, sizeof(comando) - 1);
 
         if (bytes_leidos > 0) {
-            comando[bytes_leidos] = '\0'; // Asegurar el final de la cadena
+            comando[bytes_leidos] = '\0'; // Asegurar que la cadena termine en '\0'
             printf("Comando recibido: %s\n", comando);
 
-            // Comprobar si el comando es "SALIR"
-            if (strncmp(comando, "SALIR", 5) == 0) {
-                printf("Cerrando modo esclavo...\n");
+            if (strcmp(comando, "SALIR") == 0 || strcmp(comando, "salir") == 0) {
+                printf("Comando 'SALIR' recibido. Cerrando modo esclavo...\n");
                 break;
             }
 
-            // Comprobar si el comando es "STOP"
-            if (strncmp(comando, "STOP", 4) == 0) {
-                printf("Deteniendo secuencia actual...\n");
-                ejecutando_secuencia = 0;
-                continue;
-            }
-
-            // Procesar el comando en formato "SECUENCIA:VELOCIDAD"
+            // Si el comando incluye velocidad (formato: "SECUENCIA:VEL")
             char *token = strtok(comando, ":");
-            if (token != NULL) {
-                strcpy(secuencia_actual, token);
-                token = strtok(NULL, ":");
-                if (token != NULL) {
-                    velocidad_actual = atoi(token); // Obtener la nueva velocidad
-                } else {
-                    velocidad_actual = leer_adc(0) * 1000; // Usar ADC si no hay velocidad en el comando
-                }
+            char *velocidad_str = strtok(NULL, ":");
+            if (velocidad_str) {
+                velocidad_actual = atoi(velocidad_str);
             }
 
-            // Si la secuencia es válida, iniciarla en un hilo separado
-            if (ejecutando_secuencia == 0) {
-                ejecutando_secuencia = 1;
-                if (strncmp(secuencia_actual, "AUTO", 4) == 0) {
-                    secuencia_auto_fantastico(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "CHOQUE", 6) == 0) {
-                    secuencia_choque(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "APILADA", 7) == 0) {
-                    secuencia_apilada(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "CARRERA", 7) == 0) {
-                    secuencia_carrera(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "ESCALERA", 8) == 0) {
-                    secuencia_escalera(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "CHISPAS", 7) == 0) {
-                    secuencia_chispas(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "SIRENA", 6) == 0) {
-                    secuencia_sirena(&velocidad_actual);
-                } else if (strncmp(secuencia_actual, "MATRIX", 6) == 0) {
-                    secuencia_matrix(&velocidad_actual);
-                } else {
-                    printf("Comando no reconocido: %s\n", secuencia_actual);
-                    ejecutando_secuencia = 0;
-                }
-            }
+            // Ejecutar secuencia según el comando recibido
+            if (strcmp(token, "AUTO") == 0) secuencia_auto_fantastico(&velocidad_actual);
+            else if (strcmp(token, "CHOQUE") == 0) secuencia_choque(&velocidad_actual);
+            else if (strcmp(token, "APILADA") == 0) secuencia_apilada(&velocidad_actual);
+            else if (strcmp(token, "CARRERA") == 0) secuencia_carrera(&velocidad_actual);
+            else if (strcmp(token, "ESCALERA") == 0) secuencia_escalera(&velocidad_actual);
+            else if (strcmp(token, "CHISPAS") == 0) secuencia_chispas(&velocidad_actual);
+            else if (strcmp(token, "SIRENA") == 0) secuencia_sirena(&velocidad_actual);
+            else if (strcmp(token, "MATRIX") == 0) secuencia_matrix(&velocidad_actual);
+            else printf("Comando no reconocido: %s\n", token); // Manejo de error
         }
-
-        usleep(100000); // Reducir uso de CPU
     }
 
-    close(fd); // Cerrar UART antes de salir
-    printf("Modo esclavo cerrado correctamente. Volviendo al menú principal.\n");
+    close(fd); // Cerrar UART al salir
+    printf("Modo esclavo cerrado correctamente.\n");
 }
 
-
 // Función para modo maestro
-
-// Menú simple para modo maestro
 void modo_maestro() {
-    const char *dispositivo = "/dev/ttyUSB0"; // Ajustar al puerto UART correcto
+    const char *dispositivo = "/dev/ttyS0"; // Ajusta según el puerto correcto
     int fd = configurar_uart(dispositivo);
     if (fd == -1) return;
 
@@ -137,21 +98,43 @@ void modo_maestro() {
         "AUTO", "CHOQUE", "APILADA", "CARRERA",
         "ESCALERA", "CHISPAS", "SIRENA", "MATRIX"
     };
-
-    int opcion_secuencia = 0;
-    int velocidad_actual = leer_adc(0) * 1000; // Velocidad inicial desde el ADC
+    int opcion_secuencia = 0, modo_velocidad = 0, velocidad_manual = 0;
     char comando[32];
     int ch;
 
+    // Inicializar ncurses
     initscr();
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
     curs_set(0);
 
+    // Selección del modo de velocidad
     while (1) {
         clear();
-        mvprintw(0, 0, "Modo Maestro: Seleccione una secuencia (ENTER para enviar)");
+        mvprintw(0, 0, "Modo Maestro: Seleccione el modo de velocidad");
+        mvprintw(1, 0, "1. Manual (ingresar velocidad en us)");
+        mvprintw(2, 0, "2. Automático (ADC en esclavo)");
+        mvprintw(3, 0, "Presione 'q' para regresar al menú principal.");
+        refresh();
+
+        ch = getch();
+        if (ch == '1') {
+            modo_velocidad = 1;
+            break;
+        } else if (ch == '2') {
+            modo_velocidad = 2;
+            break;
+        } else if (ch == 'q') {
+            close(fd);
+            return; // Regresa al menú principal sin salir del programa
+        }
+    }
+
+    // Menú para seleccionar las secuencias
+    while (1) {
+        clear();
+        mvprintw(0, 0, "Modo Maestro: Seleccione una secuencia (ENTER para enviar):");
         for (int i = 0; i < 8; i++) {
             if (i == opcion_secuencia) {
                 attron(A_REVERSE);
@@ -161,38 +144,39 @@ void modo_maestro() {
                 mvprintw(i + 1, 0, "%d. %s", i + 1, secuencias[i]);
             }
         }
-        mvprintw(10, 0, "Velocidad actual: %d us", velocidad_actual);
-        mvprintw(11, 0, "Flechas Arriba/Abajo para cambiar velocidad");
-        mvprintw(12, 0, "ENTER para iniciar secuencia");
-        mvprintw(13, 0, "'s' para detener secuencia, 'q' para salir.");
+        mvprintw(10, 0, "Presione 'q' para regresar al menú principal.");
         refresh();
 
         ch = getch();
         switch (ch) {
             case KEY_UP:
-                velocidad_actual = (velocidad_actual > 100000) ? velocidad_actual - 50000 : velocidad_actual;
+                opcion_secuencia = (opcion_secuencia > 0) ? opcion_secuencia - 1 : 7;
                 break;
             case KEY_DOWN:
-                velocidad_actual = (velocidad_actual < 1000000) ? velocidad_actual + 50000 : velocidad_actual;
+                opcion_secuencia = (opcion_secuencia < 7) ? opcion_secuencia + 1 : 0;
                 break;
-            case 10: // ENTER
-                snprintf(comando, sizeof(comando), "%s", secuencias[opcion_secuencia]);
+            case 10: { // ENTER
+                memset(comando, 0, sizeof(comando));
+
+                if (modo_velocidad == 1) {  // Modo Manual
+                    echo();
+                    mvprintw(12, 0, "Ingrese la velocidad en microsegundos: ");
+                    scanw("%d", &velocidad_manual);
+                    noecho();
+                    snprintf(comando, sizeof(comando), "%s:%d", secuencias[opcion_secuencia], velocidad_manual);
+                } else {  // Modo Automático (ADC)
+                    snprintf(comando, sizeof(comando), "%s:", secuencias[opcion_secuencia]);
+                }
+
+                // Enviar comando al esclavo
                 write(fd, comando, strlen(comando));
                 write(fd, "\n", 1);
-                break;
-            case 'v': // Enviar secuencia con velocidad manual
-                echo();
-                mvprintw(15, 0, "Ingrese la velocidad en us: ");
+
+                mvprintw(14, 0, "Comando enviado: %s", comando);
                 refresh();
-                scanw("%d", &velocidad_actual);
-                noecho();
-                snprintf(comando, sizeof(comando), "%s:%d", secuencias[opcion_secuencia], velocidad_actual);
-                write(fd, comando, strlen(comando));
-                write(fd, "\n", 1);
+                usleep(1500000); // Mostrar el mensaje durante 1.5 segundos
                 break;
-            case 's': // Detener secuencia en esclavo
-                write(fd, "STOP\n", 5);
-                break;
+            }
             case 'q': // Regresar al menú principal
                 close(fd);
                 endwin();
@@ -203,4 +187,3 @@ void modo_maestro() {
     close(fd);
     endwin();
 }
-
