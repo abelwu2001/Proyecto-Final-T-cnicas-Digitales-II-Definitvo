@@ -129,7 +129,7 @@ void modo_esclavo() {
 
 // Menú simple para modo maestro
 void modo_maestro() {
-    const char *dispositivo = "/dev/ttyUSB0"; // Ajustar al puerto UART correcto
+    const char *dispositivo = "/dev/ttyS0"; // Ajustar al puerto UART correcto
     int fd = configurar_uart(dispositivo);
     if (fd == -1) return;
 
