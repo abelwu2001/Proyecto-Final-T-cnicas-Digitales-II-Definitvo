@@ -9,68 +9,76 @@
 #define LED6 16
 #define LED7 20
 #define LED8 21
+
+#define PIN_BOTON 4
+int ch;
+
 #include <time.h>
 #include <stdlib.h>
+
 void itob(int numero, int *leds) {
-for (int i = 0; i < 8; i++) {
-leds[i] = (numero >> (7 - i)) & 1;
-}
-}
+            for (int i = 0; i < 8; i++) {
+                leds[i] = (numero >> (7 - i)) & 1;
+        }
+    }
+
 void interfaz(int *leds) {
-gpioWrite(LED1, leds[0]);
-gpioWrite(LED2, leds[1]);
-gpioWrite(LED3, leds[2]);
-gpioWrite(LED4, leds[3]);
-gpioWrite(LED5, leds[4]);
-gpioWrite(LED6, leds[5]);
-gpioWrite(LED7, leds[6]);
-gpioWrite(LED8, leds[7]);
+
+    gpioWrite(LED1, leds[0]);
+    gpioWrite(LED2, leds[1]);
+    gpioWrite(LED3, leds[2]);
+    gpioWrite(LED4, leds[3]);
+    gpioWrite(LED5, leds[4]);
+    gpioWrite(LED6, leds[5]);
+    gpioWrite(LED7, leds[6]);
+    gpioWrite(LED8, leds[7]);
 }
+
 // Secuencia "Auto fantástico"
 void secuencia_auto_fantastico(int *velocidad) {
-int numero = 1; // Empezamos desde la luz más a la izquierda
-int leds[8] = {0};
-int ch;
-int direccion = 1; // 1 para izquierda a derecha, -1 para derecha a izquierda
-int rows, cols;
-gpioInitialise();
-initscr();
-raw();
-noecho();
-keypad(stdscr, TRUE);
-timeout(1);
+    int numero = 1; // Empezamos desde la luz más a la izquierda
+    int leds[8] = {0};
+    int ch;
+    int direccion = 1; // 1 para izquierda a derecha, -1 para derecha a izquierda
+    int rows, cols;
+    gpioInitialise();
+    initscr();
+    raw();
+    noecho();
+    keypad(stdscr, TRUE);
+    timeout(1);
 // Obtener las dimensiones de la pantalla
-getmaxyx(stdscr, rows, cols);
+    getmaxyx(stdscr, rows, cols);
 // Definir las dimensiones de la ventana para el menú de la secuencia
-int ventana_height = 6; // Altura de la ventana (cuántas filas ocupará)
-int ventana_width = 40; // Ancho de la ventana (cuántas columnas ocupará)
-int ventana_start_y = (rows - ventana_height) / 2; // Centrar verticalmente
-int ventana_start_x = (cols - ventana_width) / 2; // Centrar horizontalmente
+    int ventana_height = 6; // Altura de la ventana (cuántas filas ocupará)
+    int ventana_width = 40; // Ancho de la ventana (cuántas columnas ocupará)
+    int ventana_start_y = (rows - ventana_height) / 2; // Centrar verticalmente
+    int ventana_start_x = (cols - ventana_width) / 2; // Centrar horizontalmente
 // Crear una ventana en ncurses
-WINDOW *sec_window = newwin(ventana_height, ventana_width, ventana_start_y, ventana_start_x);
-box(sec_window, 0, 0); // Dibujar un borde alrededor de la ventana
-while ((ch = getch()) != KEY_F(2)) { // Salir si se presiona F2
+    WINDOW *sec_window = newwin(ventana_height, ventana_width, ventana_start_y, ventana_start_x);
+    box(sec_window, 0, 0); // Dibujar un borde alrededor de la ventana
+    while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir si se presiona F2
 // Cambiar la velocidad con las flechas
-if (ch == KEY_UP) {
-*velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
-} else if (ch == KEY_DOWN) {
-*velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
+    if (ch == KEY_UP) {
+    *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
+    } else if (ch == KEY_DOWN) {
+    *velocidad = (*velocidad < 1000000) ? *velocidad + 50000 : *velocidad;
 }
 // Convertir el número a la representación binaria de los LEDs
-itob(numero, leds);
-interfaz(leds); // Actualizar los LEDs
+    itob(numero, leds);
+    interfaz(leds); // Actualizar los LEDs
 // Mover la luz de izquierda a derecha o de derecha a izquierda
-if (direccion == 1) { // Izquierda a derecha
-if (numero < 128) { // No hemos llegado al final
-numero = numero << 1;
-} else {
-direccion = -1; // Cambiar dirección a derecha a izquierda
-}
-} else { // Derecha a izquierda
-if (numero > 1) { // No hemos llegado al inicio
-numero = numero >> 1;
-} else {
-direccion = 1; // Cambiar dirección a izquierda a derecha
+    if (direccion == 1) { // Izquierda a derecha
+    if (numero < 128) { // No hemos llegado al final
+    numero = numero << 1;
+    } else {
+    direccion = -1; // Cambiar dirección a derecha a izquierda
+    }
+    } else { // Derecha a izquierda
+    if (numero > 1) { // No hemos llegado al inicio
+    numero = numero >> 1;
+    } else {
+    direccion = 1; // Cambiar dirección a izquierda a derecha
 }
 }
 gpioDelay(*velocidad); // Pausar según la velocidad definida
@@ -112,7 +120,7 @@ int ventana_start_y = (rows - ventana_height) / 2;
 int ventana_start_x = (cols - ventana_width) / 2;
 WINDOW *sec_window = newwin(ventana_height, ventana_width, ventana_start_y, ventana_start_x);
 box(sec_window, 0, 0);
-while ((ch = getch()) != KEY_F(2)) { // Salir si se presiona F2
+    while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir si se presiona F2
 // Cambiar la velocidad con las flechas
 if (ch == KEY_UP) {
 *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
@@ -334,7 +342,7 @@ void secuencia_carrera(int *velocidad) {
     }
 
     // Mostrar configuración inicial
-    while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+       while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir con F2
         // Ajustar velocidad con las flechas
         if (ch == KEY_UP) {
             *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
@@ -414,7 +422,7 @@ mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
 mvwprintw(sec_window, 3, 2, "Flechas arriba/abajo: Cambiar velocidad");
 mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
 wrefresh(sec_window); // Actualizar la ventana
-while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+    while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir con F2
 // Ajustar velocidad con las flechas
 if (ch == KEY_UP) {
 *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
@@ -512,7 +520,7 @@ void secuencia_chispas(int *velocidad) {
     mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
     wrefresh(sec_window); // Actualizar la ventana
 
-    while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+       while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir con F2
         // Ajustar velocidad con las flechas
         if (ch == KEY_UP) {
             *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
@@ -610,7 +618,7 @@ void secuencia_sirena(int *velocidad) {
     mvwprintw(sec_window, 4, 2, "F2: Volver al menu");
     wrefresh(sec_window);  // Actualizar la ventana
 
-    while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+       while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir con F2
         // Ajustar velocidad con las flechas
         if (ch == KEY_UP) {
             *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
@@ -714,7 +722,7 @@ void secuencia_matrix(int *velocidad) {
             for (int j = 0; j < 8; j++) {
 
             
-            if ((ch = getch()) == KEY_F(2)) {
+            if ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) {
             for (int k = 0; k < 8; k++) leds[k] = 0;
             interfaz(leds); // Actualizar LEDs
             return; // Salir inmediatamente

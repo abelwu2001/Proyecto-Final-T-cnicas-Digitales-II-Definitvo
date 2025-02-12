@@ -98,35 +98,27 @@ void modo_esclavo() {
                 if (strncmp(secuencia_actual, "AUTO", 4) == 0) {
                     secuencia_auto_fantastico(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "CHOQUE", 6) == 0) {
                     secuencia_choque(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "APILADA", 7) == 0) {
                     secuencia_apilada(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "CARRERA", 7) == 0) {
                     secuencia_carrera(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "ESCALERA", 8) == 0) {
                     secuencia_escalera(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "CHISPAS", 7) == 0) {
                     secuencia_chispas(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "SIRENA", 6) == 0) {
                     secuencia_sirena(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else if (strncmp(secuencia_actual, "MATRIX", 6) == 0) {
                     secuencia_matrix(&velocidad_actual);
                     ejecutando_secuencia = 0;
-                    endwin();
                 } else {
                     printf("Comando no reconocido: %s\n", secuencia_actual);
                     ejecutando_secuencia = 0;
