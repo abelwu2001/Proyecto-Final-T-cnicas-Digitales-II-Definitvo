@@ -219,4 +219,3 @@ void modo_maestro() {
     close(fd);
     endwin();
 }
-
