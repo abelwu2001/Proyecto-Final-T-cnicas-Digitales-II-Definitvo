@@ -220,7 +220,7 @@ mvwprintw(sec_window, 2, 2, "Velocidad: %dus", *velocidad);
 mvwprintw(sec_window, 3, 2, "Usa las Flechas para cambiar velocidad");
 mvwprintw(sec_window, 4, 2, "Presiona F2 para volver al menu");
 wrefresh(sec_window); // Actualizar la ventana
-while ((ch = getch()) != KEY_F(2)) { // Salir con F2
+ while ( (ch = getch()) != KEY_F(2) && gpioRead(PIN_BOTON) == 0 ) { // Salir con F2
 // Ajustar velocidad con flechas
 if (ch == KEY_UP) {
 *velocidad = (*velocidad > 100000) ? *velocidad - 50000 : *velocidad;
